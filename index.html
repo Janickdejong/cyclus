@@ -30,11 +30,12 @@
   #themeToggle{background:rgba(255,255,255,0.15); border:none; color:#fff;
     width:40px; height:40px; border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;}
   nav{display:flex; gap:5px; padding:10px 10px; position:sticky; top:0;
-    background:var(--nav-bg); z-index:20; border-bottom:1px solid var(--line);}
+    background:var(--nav-bg); z-index:20; border-bottom:1px solid var(--line);
+    max-width:640px; margin:0 auto;}
   nav button{flex:1; padding:9px 2px; border:none; border-radius:12px;
     background:transparent; color:var(--plum-dark); font-weight:600; font-size:0.8rem; cursor:pointer;}
   nav button.active{background:var(--plum); color:#fff;}
-  main{padding:12px;}
+  main{padding:12px; max-width:640px; margin:0 auto;}
   section{display:none;} section.active{display:block;}
   .card{background:var(--surface); border-radius:16px; padding:15px; margin-bottom:12px;
     box-shadow:0 2px 10px rgba(0,0,0,0.12);}
@@ -169,6 +170,7 @@
   <div class="card">
     <h2 id="kaartTitle">Cycluskaart</h2>
     <div id="interpretationBox" style="font-size:0.82rem; line-height:1.5;"></div>
+    <button class="secondary" id="mailCycleBtn">&#9993;&#65039; Deze cyclus mailen</button>
   </div>
   <div class="card" style="padding:10px;">
     <div class="kaart-outer" id="kaartOuter"></div>
@@ -432,6 +434,11 @@ document.querySelectorAll('nav button').forEach(btn=>{
 function goTab(name){ document.querySelector(`nav button[data-tab=${name}]`).click(); }
 document.getElementById('fabAdd').addEventListener('click',()=>goTab('vandaag'));
 document.getElementById('newCycleBtn').addEventListener('click', async ()=>{
+  const afgerondeCyclus = currentCycle();
+  // mail de zojuist afgeronde cyclus automatisch (stil, op de achtergrond)
+  if(afgerondeCyclus && afgerondeCyclus.days.length >= 10){
+    sendCycleMail(afgerondeCyclus, true);
+  }
   startNewCycle(todayISO()); await saveData(); goTab('vandaag');
 });
 
@@ -815,6 +822,63 @@ document.getElementById('themeToggle').addEventListener('click', async ()=>{
   // hertekenen als de kaart open is
   const kaartActive=document.getElementById('tab-kaart').classList.contains('active');
   if(kaartActive) renderKaart();
+});
+
+/* ---- Cyclus mailen ---- */
+function buildCycleText(cycle){
+  const end=computeInfertileAfterOvulation(cycle);
+  const peak=computePeakDay(cycle);
+  const rise=computeTempRise(cycle);
+  let lines=[];
+  lines.push(`Cycluskaart — cyclus ${cycle.nummer}`);
+  lines.push(`Start: ${fmtDateLong(cycle.startDate)}`);
+  lines.push(`Aantal dagen ingevoerd: ${cycle.days.length}`);
+  lines.push('');
+  if(rise) lines.push(`Temperatuurstijging bevestigd op dag ${rise.riseIdx[2]+1} (hulplijn ${rise.hulplijn.toFixed(2)} graden).`);
+  if(peak) lines.push(`Cervixslijmpiekdag: dag ${peak.index+1}.`);
+  if(end.combined!==null) lines.push(`Einde vruchtbare periode: avond van dag ${end.combined+1}.`);
+  lines.push('');
+  lines.push('Dag | Datum | Temp | Slijm | BMH | Bloeding | Gem.');
+  cycle.days.forEach((d,i)=>{
+    const bmh=d.bmOpening? (d.bmOpening[0]+'/'+(d.bmStevigheid||'?')) : '-';
+    lines.push([
+      i+1, fmtDate(d.date),
+      d.temp? (d.temp+(d.gestoord?'*':'')) : '-',
+      d.cervixAfk||'-',
+      bmh,
+      d.bloeding||'-',
+      d.extra&&d.extra.includes('X')?'X':'-'
+    ].join(' | '));
+  });
+  lines.push('');
+  lines.push('* = gestoorde meting (telt niet mee)');
+  lines.push('Verstuurd vanuit de Cyclus-app.');
+  return lines.join('\n');
+}
+async function sendCycleMail(cycle, silent){
+  if(!sb || !currentUser){ if(!silent) alert('Je moet ingelogd zijn om te mailen.'); return false; }
+  const subject=`Cycluskaart cyclus ${cycle.nummer} (start ${fmtDate(cycle.startDate)})`;
+  const text=buildCycleText(cycle);
+  const to=currentUser.email;
+  try{
+    const { data, error } = await sb.functions.invoke('mail-cyclus', { body:{ to, subject, text } });
+    if(error) throw error;
+    if(data && data.id){ return true; }
+    if(data && data.error){ throw new Error(data.error); }
+    return true;
+  }catch(e){
+    if(!silent) alert('Mailen mislukt: '+(e.message||e)+'\n\nControleer of het domein in Resend geverifieerd is.');
+    return false;
+  }
+}
+document.getElementById('mailCycleBtn').addEventListener('click', async (ev)=>{
+  const btn=ev.currentTarget;
+  const cycle=currentCycle();
+  btn.textContent='Versturen…'; btn.disabled=true;
+  const ok=await sendCycleMail(cycle, false);
+  btn.textContent = ok ? '✓ Verstuurd naar '+currentUser.email : '✉️ Deze cyclus mailen';
+  btn.disabled=false;
+  setTimeout(()=>{ btn.innerHTML='&#9993;&#65039; Deze cyclus mailen'; }, 4000);
 });
 
 /* ---- Demo data ---- */
