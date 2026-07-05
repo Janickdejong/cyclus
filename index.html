@@ -40,7 +40,8 @@
   header h1{font-family:Georgia,serif; margin:0; font-size:1.35rem;}
   header .sub{font-size:0.8rem; opacity:0.85; margin-top:3px;}
   #settingsBtn{background:rgba(255,255,255,0.15); border:none; color:#fff;
-    width:40px; height:40px; border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;}
+    width:40px; height:40px; border-radius:50%; cursor:pointer; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;}
   nav{display:flex; gap:5px; padding:10px 10px; position:sticky; top:0;
     background:var(--nav-bg); z-index:20; border-bottom:1px solid var(--line);
     max-width:640px; margin:0 auto;}
@@ -197,7 +198,7 @@
     <div class="sub" id="headerSub">Sensiplan &middot; symptothermale methode</div>
   </div>
   <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
-    <button id="settingsBtn" title="Instellingen">&#9881;&#65039;</button>
+    <button id="settingsBtn" title="Instellingen"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
     <button id="logoutBtn">Uitloggen</button>
   </div>
 </header>
@@ -285,7 +286,7 @@
     <div class="kaart-outer" id="kaartOuter"></div>
     <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--line);">
       <div style="font-size:0.72rem; color:var(--text-soft); margin-bottom:8px; font-weight:600;">
-        📖 Legenda <span style="font-weight:400;">— scroll horizontaal door de kaart</span></div>
+        📖 Legenda</div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:0.74rem;">
         <div style="display:flex; align-items:center; gap:7px;">
           <span style="display:inline-block; width:18px; text-align:center; color:#B8860B; font-size:1rem;">◯</span>
@@ -1116,7 +1117,7 @@ function buildKaartInto(targetId, cycle){
   ];
   html+=`<table class="kaart"><tbody>`;
   for(const row of rows){
-    html+=`<tr><th class="rowlabel" data-uitleg="${row.key}" style="cursor:pointer;">${row.label} <span style="opacity:0.5;">ⓘ</span></th>`;
+    html+=`<tr><th class="rowlabel" data-uitleg="${row.key}" style="cursor:pointer;">${row.label}</th>`;
     for(let i=0;i<n;i++){
       const d=days[i];
       let cls='', content='';
@@ -1167,7 +1168,7 @@ function buildKaartInto(targetId, cycle){
   document.getElementById(targetId).querySelectorAll('th.rowlabel[data-uitleg]').forEach(th=>{
     th.addEventListener('click',()=>{
       const key=th.dataset.uitleg;
-      showColumnInfo(th.textContent.replace('ⓘ','').trim(), rowUitleg[key]||'');
+      showColumnInfo(th.textContent.trim(), rowUitleg[key]||'');
     });
   });
 
@@ -1435,20 +1436,16 @@ document.getElementById('colInfoPopup').addEventListener('click',(e)=>{
 
 /* ---- Begroeting met bijbeltekst (HSV) en fase-uitleg ---- */
 const BIJBELTEKSTEN = [
-  {t:"Ik loof U, omdat ik ontzagwekkend wonderlijk gemaakt ben; wonderlijk zijn Uw werken, mijn ziel weet dat zeer goed.", r:"Psalm 139:14"},
+  {t:"Ik loof U omdat ik ontzagwekkend wonderlijk gemaakt ben; wonderlijk zijn Uw werken, mijn ziel weet dat zeer goed.", r:"Psalm 139:14"},
   {t:"Alles heeft zijn tijd, en ieder ding onder de hemel heeft zijn uur.", r:"Prediker 3:1"},
   {t:"De HEERE is mijn Herder, mij ontbreekt niets.", r:"Psalm 23:1"},
   {t:"Wees in geen ding bezorgd, maar laat uw verlangens in alles, door bidden en smeken, met dankzegging bekend worden bij God.", r:"Filippenzen 4:6"},
   {t:"Werp al uw zorgen op Hem, want Hij zorgt voor u.", r:"1 Petrus 5:7"},
   {t:"Zie, kinderen zijn het eigendom van de HEERE, de vrucht van de schoot is Zijn beloning.", r:"Psalm 127:3"},
-  {t:"Deze is de dag die de HEERE gemaakt heeft, laten wij op deze dag ons verheugen en verblijd zijn.", r:"Psalm 118:24"},
-  {t:"Want Ik ken de gedachten die Ik over u koester, spreekt de HEERE. Het zijn gedachten van vrede en niet van kwaad.", r:"Jeremia 29:11"},
-  {t:"De HEERE zal het voor mij voleindigen; Uw goedertierenheid, HEERE, is voor eeuwig.", r:"Psalm 138:8"},
-  {t:"Wentel uw weg op de HEERE en vertrouw op Hem: Híj zal het doen.", r:"Psalm 37:5"},
+  {t:"Dit is de dag die de HEERE gemaakt heeft, laten wij op deze dag ons verheugen en verblijd zijn.", r:"Psalm 118:24"},
   {t:"Verblijd u altijd in de Heere; ik zeg het opnieuw: Verblijd u.", r:"Filippenzen 4:4"},
-  {t:"Wie de HEERE verwachten, zullen hun kracht vernieuwen, zij zullen hun vleugels uitslaan als arenden.", r:"Jesaja 40:31"},
+  {t:"Wentel uw weg op de HEERE en vertrouw op Hem: Híj zal het doen.", r:"Psalm 37:5"},
   {t:"Uw woord is een lamp voor mijn voet en een licht op mijn pad.", r:"Psalm 119:105"},
-  {t:"Want bij U is de bron van het leven; in Uw licht zien wij het licht.", r:"Psalm 36:10"},
   {t:"De HEERE is nabij de gebrokenen van hart, Hij verlost de verbrijzelden van geest.", r:"Psalm 34:19"}
 ];
 function verseOfToday(){
