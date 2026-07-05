@@ -100,6 +100,12 @@
   td.vrucht-v{color:var(--danger); font-weight:700;}
   td.rise{color:var(--rose); font-weight:700;}
   td.streep-r{border-right:2.5px solid var(--plum-dark) !important;}
+  /* Slijm-afkorting kleuren */
+  td.sq-d{background:#F0E9E4; color:#8a7a6a;} body.dark td.sq-d{background:#332A3A; color:#B8A9B4;}
+  td.sq-0{background:#E8E0DA; color:#8a7a6a;} body.dark td.sq-0{background:#332A3A; color:#B8A9B4;}
+  td.sq-v{background:#E0ECE2; color:#4E6B54;} body.dark td.sq-v{background:#2A3A2E; color:#A8C9B0;}
+  td.sq-S{background:#FCE8D8; color:#9A6030;} body.dark td.sq-S{background:#3A2E22; color:#E8C090;}
+  td.sq-Sp{background:#F3C9CF; color:#7A3040;} body.dark td.sq-Sp{background:#5A2030; color:#F3C9CF;}
   .canvas-scroll{position:relative;}
   .yaxis{position:sticky; left:0; z-index:4; background:linear-gradient(90deg,#fff 80%,transparent);}
 
@@ -403,6 +409,38 @@ const CERVIX_OPTIONS = [
   {value:'S+', label:'S+ — helder, transparant, rekbaar, als rauw eiwit'},
   {value:'S+', label:'S+ — nat, glibberig, glad, ingeolied'}
 ];
+/* Sensiplan ervaren/voelen opties (boek-conform) */
+const ERVAREN_OPTIES = [
+  {value:'droog',  label:'droog / ruw / jeukend'},
+  {value:'niets',  label:'niets gevoeld'},
+  {value:'vochtig', label:'vochtig'},
+  {value:'nat',    label:'nat / glibberig / glad'}
+];
+/* Sensiplan uiterlijk opties (boek-conform) */
+const UITERLIJK_OPTIES = [
+  {value:'niets',    label:'niets gezien'},
+  {value:'dik',      label:'dik / wit / troebel / romig'},
+  {value:'kleverig', label:'kleverig / klonterig / gelig'},
+  {value:'helder',   label:'doorzichtig / glashelder / rekbaar'},
+  {value:'eiwit',    label:'als rauw eiwit / vloeibaar'},
+  {value:'rood',     label:'roodachtig / roodbruin / geel-rood'}
+];
+/* Automatische afleiding van de Sensiplan-afkorting */
+function deriveAfkorting(ervaren, uiterlijk){
+  if(!ervaren) return null;
+  // nat/glibberig/glad → altijd S+
+  if(ervaren==='nat') return 'S+';
+  // doorzichtig/rekbaar/eiwit/rood → S+ (ongeacht gevoel)
+  if(['helder','eiwit','rood'].includes(uiterlijk)) return 'S+';
+  // dik/kleverig → S
+  if(['dik','kleverig'].includes(uiterlijk)) return 'S';
+  // vochtig + niets gezien → v
+  if(ervaren==='vochtig') return 'v';
+  // niets gevoeld + niets gezien → Ø
+  if(ervaren==='niets') return 'Ø';
+  // droog → d
+  return 'd';
+}
 const QUALITY_RANK = {'d':0,'Ø':0,'v':1,'S':2,'S+':3};
 
 let DATA = { cycles: [] };
@@ -656,12 +694,17 @@ function renderVandaag(editIdx=null){
       <div class="chip" data-v="">geen</div><div class="chip" data-v="licht">licht/spotting</div>
       <div class="chip" data-v="normaal">normaal</div><div class="chip" data-v="sterk">sterk</div>
     </div>
-    <label>Cervixslijm</label>
-    <select id="f_cervix"><option value="">— kies —</option>
-      ${CERVIX_OPTIONS.map((o,i)=>`<option value="${o.value}" data-i="${i}">${o.label}</option>`).join('')}
-    </select>
-    <label>Uiterlijk / omschrijving <span class="muted">(vrije notitie, zoals op papier)</span></label>
-    <input type="text" id="f_uiterlijk" placeholder="bv. kleverig, troebel" value="${day&&day.uiterlijk?day.uiterlijk:''}">
+    <label>Cervixslijm — ervaren / voelen</label>
+    <div class="chip-row" id="f_ervaren">
+      ${ERVAREN_OPTIES.map(o=>`<div class="chip" data-v="${o.value}">${o.label}</div>`).join('')}
+    </div>
+    <label>Cervixslijm — uiterlijk</label>
+    <div class="chip-row" id="f_uiterlijk_chips">
+      ${UITERLIJK_OPTIES.map(o=>`<div class="chip" data-v="${o.value}">${o.label}</div>`).join('')}
+    </div>
+    <div id="f_afkorting_preview" style="margin-top:8px; font-size:0.82rem; color:var(--plum-dark); font-weight:600;"></div>
+    <label>Extra omschrijving <span class="muted">(optioneel, vrije notitie)</span></label>
+    <input type="text" id="f_uiterlijk" placeholder="bv. een beetje taal-elastisch" value="${day&&day.uiterlijk?day.uiterlijk:''}">
     <label>Baarmoederhals <span class="muted">(optioneel)</span></label>
     <div class="chip-row" id="f_bmopen">
       <div class="chip" data-v="gesloten">gesloten •</div>
@@ -684,15 +727,24 @@ function renderVandaag(editIdx=null){
 
   const state={ bloeding:day?day.bloeding:'', bmopen:day?day.bmOpening:null,
     bmhard:day?day.bmStevigheid:null,
+    ervaren:day&&day.ervaren?day.ervaren:null,
+    uiterlijkChip:day&&day.uiterlijkChip?day.uiterlijkChip:null,
     extra:new Set(day&&day.extra? day.extra.split(','):[]) };
+
+  function updateAfkPreview(){
+    const afk = deriveAfkorting(state.ervaren, state.uiterlijkChip);
+    const el = document.getElementById('f_afkorting_preview');
+    if(afk) el.textContent = `→ Afkorting: ${afk}`;
+    else el.textContent = '';
+  }
+
   setupChips('f_bloeding', v=>state.bloeding=v, true, state.bloeding);
+  setupChips('f_ervaren', v=>{state.ervaren=(state.ervaren===v?null:v); updateAfkPreview();}, true, state.ervaren);
+  setupChips('f_uiterlijk_chips', v=>{state.uiterlijkChip=(state.uiterlijkChip===v?null:v); updateAfkPreview();}, true, state.uiterlijkChip);
   setupChips('f_bmopen', v=>state.bmopen=(state.bmopen===v?null:v), true, state.bmopen);
   setupChips('f_bmhard', v=>state.bmhard=(state.bmhard===v?null:v), true, state.bmhard);
   setupChips('f_extra', v=>{ state.extra.has(v)?state.extra.delete(v):state.extra.add(v); }, false, null, state.extra);
-  if(day&&day.cervixAfk){
-    const sel=document.getElementById('f_cervix');
-    for(const opt of sel.options){ if(opt.value===day.cervixAfk){ sel.value=day.cervixAfk; break; } }
-  }
+  updateAfkPreview();
   document.getElementById('saveDayBtn').addEventListener('click', async ()=>{
     const newDay={
       date:document.getElementById('f_date').value||suggestedDate,
@@ -700,7 +752,9 @@ function renderVandaag(editIdx=null){
       meettijd:document.getElementById('f_meettijd').value||null,
       gestoord:document.getElementById('f_gestoord').checked,
       bloeding:state.bloeding||'',
-      cervixAfk:document.getElementById('f_cervix').value||null,
+      ervaren:state.ervaren||null,
+      uiterlijkChip:state.uiterlijkChip||null,
+      cervixAfk:deriveAfkorting(state.ervaren, state.uiterlijkChip),
       uiterlijk:document.getElementById('f_uiterlijk').value||'',
       bmOpening:state.bmopen||null, bmStevigheid:state.bmhard||null,
       extra:[...state.extra].join(','),
@@ -801,6 +855,10 @@ function buildKaartInto(targetId, cycle){
             break;
           case 'safk':
             content=d.cervixAfk||'';
+            if(d.cervixAfk){
+              const sqmap={'d':'sq-d','Ø':'sq-0','v':'sq-v','S':'sq-S','S+':'sq-Sp'};
+              cls+=' '+(sqmap[d.cervixAfk]||'');
+            }
             break;
           case 'dagnr': content=i+1; break;
           case 'datum': content=fmtDate(d.date).replace(' ',''); break;
@@ -809,7 +867,7 @@ function buildKaartInto(targetId, cycle){
             else if(d.bloeding) cls+=' bloed';
             break;
           case 'ervaren': cls+=' slijmcell'; content=ervarenText(d); break;
-          case 'uiterlijk': cls+=' slijmcell'; content=(d.uiterlijk||'').slice(0,18); break;
+          case 'uiterlijk': cls+=' slijmcell'; content=uiterlijkText(d); break;
           case 'bmh':
             if(d.bmOpening){
               const sym=d.bmOpening==='gesloten'?'•':(d.bmOpening==='deels'?'○':'◯');
@@ -913,8 +971,22 @@ function buildKaartInto(targetId, cycle){
   }
 }
 function ervarenText(d){
+  // Nieuw formaat: ervaren-veld
+  if(d.ervaren){
+    return {'droog':'droog/ruw','niets':'niets gevoeld','vochtig':'vochtig','nat':'nat/glibberig'}[d.ervaren]||'';
+  }
+  // Fallback voor oude data met alleen cervixAfk
   if(!d.cervixAfk) return '';
-  return {'d':'droog','Ø':'niets','v':'vochtig','S':'vochtig','S+':'nat/vochtig'}[d.cervixAfk]||'';
+  return {'d':'droog/ruw','Ø':'niets gevoeld','v':'vochtig','S':'vochtig','S+':'nat/glibberig'}[d.cervixAfk]||'';
+}
+function uiterlijkText(d){
+  // Nieuw formaat: uiterlijkChip-veld
+  if(d.uiterlijkChip){
+    return {'niets':'niets gezien','dik':'dik/wit/troebel','kleverig':'kleverig/klonterig',
+      'helder':'doorzichtig/rekbaar','eiwit':'als rauw eiwit','rood':'roodachtig'}[d.uiterlijkChip]||'';
+  }
+  // Fallback: vrije tekst of leeg
+  return (d.uiterlijk||'').slice(0,22);
 }
 function dayFertility(i,start,end,day){
   // bloedingsdagen zijn nooit vruchtbaar in de kaart-markering
@@ -1250,6 +1322,12 @@ function makeDemoCycle(nummer, startISO){
   const slijm=[ // afkortingen; menstruatie eerste dagen geen slijm
     null,null,null,null,'d','d','Ø','v','v','S','S','S','S+','S+','S+',
     'S','v','Ø','d','d','d','d','d','d','d','d','d','d','d'];
+  const ervaren_demo=[
+    null,null,null,null,'droog','droog','niets','vochtig','vochtig','vochtig','vochtig','vochtig','nat','nat','nat',
+    'vochtig','vochtig','niets','droog','droog','droog','droog','droog','droog','droog','droog','droog','droog','droog'];
+  const uiterlijkChip_demo=[
+    null,null,null,null,'niets','niets','niets','niets','kleverig','dik','dik','dik','helder','eiwit','helder',
+    'kleverig','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets','niets'];
   const uiterlijk=[
     '','','','','','','','','kleverig','wit troebel','wit troebel','romig',
     'helder rekbaar','helder, rekbaar','helder rekbaar','kleverig wit','','','','','','','','','','','','',''];
@@ -1265,6 +1343,8 @@ function makeDemoCycle(nummer, startISO){
       gestoord:gestoord[i],
       bloeding:bloeding[i]||'',
       cervixAfk:slijm[i]||null,
+      ervaren:ervaren_demo[i]||null,
+      uiterlijkChip:uiterlijkChip_demo[i]||null,
       uiterlijk:uiterlijk[i]||'',
       bmOpening: (i>=10&&i<=16)?'deels':'gesloten',
       bmStevigheid: (i>=10&&i<=16)?'zacht':'hard',
