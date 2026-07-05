@@ -11,6 +11,9 @@
 <meta name="theme-color" content="#5B3A4B">
 <link rel="manifest" id="pwaManifest">
 <link rel="apple-touch-icon" id="appleTouchIcon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
 <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Cyclus%20%C2%B7%20Sensiplan%22%2C%22short_name%22%3A%22Cyclus%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FBF6F1%22%2C%22theme_color%22%3A%22%235B3A4B%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%25270%25200%2520100%2520100%2527%253E%253Ccircle%2520cx%3D%252750%2527%2520cy%3D%252750%2527%2520r%3D%252750%2527%2520fill%3D%2527%25235B3A4B%2527%2F%253E%253Ctext%2520x%3D%252750%2527%2520y%3D%252768%2527%2520font-size%3D%252760%2527%2520text-anchor%3D%2527middle%2527%253E%25F0%259F%258C%25BF%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -36,7 +39,7 @@
   body.dark header{background:linear-gradient(135deg,#3E2735,#241723);}
   header h1{font-family:Georgia,serif; margin:0; font-size:1.35rem;}
   header .sub{font-size:0.8rem; opacity:0.85; margin-top:3px;}
-  #themeToggle{background:rgba(255,255,255,0.15); border:none; color:#fff;
+  #settingsBtn{background:rgba(255,255,255,0.15); border:none; color:#fff;
     width:40px; height:40px; border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;}
   nav{display:flex; gap:5px; padding:10px 10px; position:sticky; top:0;
     background:var(--nav-bg); z-index:20; border-bottom:1px solid var(--line);
@@ -128,6 +131,16 @@
     border-bottom:1px solid var(--line); font-size:0.82rem; align-items:center;}
   .daylist-item button{border:none; background:none; color:var(--plum); font-size:0.75rem;
     cursor:pointer; text-decoration:underline; padding:4px;}
+  /* Begroeting / bijbeltekst */
+  .greeting-card{background:linear-gradient(135deg,var(--plum),var(--plum-dark)); color:#fff;
+    border-radius:16px; padding:20px 18px; margin-bottom:12px;}
+  body.dark .greeting-card{background:linear-gradient(135deg,#3E2735,#241723);}
+  .greeting-hi{font-size:0.95rem; opacity:0.9; margin-bottom:10px;}
+  .greeting-verse{font-family:'Cormorant Garamond',Georgia,serif; font-size:1.35rem;
+    line-height:1.4; font-style:italic; font-weight:500;}
+  .greeting-ref{font-size:0.8rem; opacity:0.85; margin-top:8px; font-family:'Cormorant Garamond',serif; font-weight:600;}
+  .greeting-phase{font-size:0.82rem; opacity:0.95; margin-top:14px; padding-top:12px;
+    border-top:1px solid rgba(255,255,255,0.2); line-height:1.5;}
   /* Agenda maandkalender */
   .month-block{margin-bottom:18px;}
   .month-title{font-family:Georgia,serif; color:var(--plum-dark); font-size:0.95rem; margin:4px 0 6px;}
@@ -184,10 +197,73 @@
     <div class="sub" id="headerSub">Sensiplan &middot; symptothermale methode</div>
   </div>
   <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
-    <button id="themeToggle" title="Dag/nacht">&#127769;</button>
+    <button id="settingsBtn" title="Instellingen">&#9881;&#65039;</button>
     <button id="logoutBtn">Uitloggen</button>
   </div>
 </header>
+
+<!-- Instellingen popup -->
+<div id="settingsPopup" style="display:none; position:fixed; inset:0; z-index:60;
+  background:rgba(0,0,0,0.45); align-items:flex-end; justify-content:center;">
+  <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 32px;
+    width:100%; max-width:640px; box-shadow:0 -4px 20px rgba(0,0,0,0.2); max-height:85vh; overflow-y:auto;">
+    <div style="width:40px; height:4px; background:var(--line); border-radius:4px; margin:0 auto 18px;"></div>
+    <h2 style="margin:0 0 16px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.15rem;">⚙️ Instellingen</h2>
+
+    <div class="toggle-row" style="border-bottom:1px solid var(--line); padding-bottom:12px;">
+      <span>🌙 Donkere modus</span>
+      <label class="switch"><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <div class="toggle-row" style="padding:0;">
+        <span>⏰ Dagelijkse herinnering</span>
+        <label class="switch"><input type="checkbox" id="setReminderToggle"><span class="slider"></span></label>
+      </div>
+      <div id="setReminderTimeRow" style="display:none; margin-top:10px;">
+        <label>Herinneringstijd</label>
+        <input type="time" id="setReminderTime" value="07:00" style="max-width:140px;">
+      </div>
+      <p class="muted" id="setReminderStatus" style="font-size:0.74rem; margin-top:6px;"></p>
+    </div>
+
+    <div style="padding:14px 0;">
+      <span style="font-weight:600; font-size:0.9rem;">✉️ Cyclus mailen</span>
+      <p class="muted" style="font-size:0.78rem; margin:6px 0 10px; line-height:1.5;">
+        Stuur de ingevulde cycluskaart als PDF naar <b id="setMailEmail"></b>.
+        Handig als back-up of voor een arts.</p>
+      <button class="secondary" id="setMailSend" style="margin:0;">Verstuur PDF-kaart</button>
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <span style="font-weight:600; font-size:0.9rem;">🌸 Bijzondere fase</span>
+      <p class="muted" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;">
+        In deze fases zijn de gewone regels niet betrouwbaar. De app zet dan de automatische
+        vruchtbaar/onvruchtbaar-conclusie uit en toont de juiste uitleg. Beoordeel zelf of met een consulent.</p>
+      <div class="toggle-row" style="padding:4px 0;">
+        <span>💊 Na de pil (post-hormonaal)</span>
+        <label class="switch"><input type="checkbox" id="modePostPil"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row" style="padding:4px 0;">
+        <span>🤱 Borstvoeding</span>
+        <label class="switch"><input type="checkbox" id="modeBorstvoeding"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <button class="secondary" id="settingsClose" style="margin-top:10px;">Sluiten</button>
+  </div>
+</div>
+
+<!-- Kolom-uitleg popup -->
+<div id="colInfoPopup" style="display:none; position:fixed; inset:0; z-index:70;
+  background:rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:18px; padding:22px 20px; width:100%; max-width:400px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2);">
+    <h2 id="colInfoTitle" style="margin:0 0 10px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
+    <p id="colInfoText" style="font-size:0.86rem; color:var(--text); line-height:1.6; margin:0 0 16px;"></p>
+    <button class="secondary" id="colInfoClose" style="margin:0;">Sluiten</button>
+  </div>
+</div>
 
 <nav>
   <button data-tab="vandaag" class="active">Vandaag</button>
@@ -202,44 +278,35 @@
 
 <section id="tab-kaart">
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <div style="flex:1;">
-        <h2 id="kaartTitle">Cycluskaart</h2>
-        <div id="interpretationBox" style="font-size:0.82rem; line-height:1.5;"></div>
-      </div>
-      <button id="mailIconBtn" title="Cyclus mailen" style="
-        background:var(--rose); border:none; color:#fff; width:42px; height:42px;
-        border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;
-        margin-left:10px; margin-top:2px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-        ✉️
-      </button>
-    </div>
-  </div>
-
-  <!-- Mail popup -->
-  <div id="mailPopup" style="display:none; position:fixed; inset:0; z-index:50;
-    background:rgba(0,0,0,0.45); align-items:flex-end; justify-content:center;">
-    <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 32px;
-      width:100%; max-width:640px; box-shadow:0 -4px 20px rgba(0,0,0,0.2);">
-      <div style="width:40px; height:4px; background:var(--line); border-radius:4px;
-        margin:0 auto 18px;"></div>
-      <h2 style="margin:0 0 8px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.1rem;">
-        ✉️ Cyclus mailen</h2>
-      <p style="font-size:0.84rem; color:var(--text-soft); line-height:1.55; margin:0 0 16px;">
-        Stuur de ingevulde cycluskaart als <b>PDF-bijlage</b> naar je e-mailadres.
-        De mail wordt verstuurd via <b>kaart@cycluss.nl</b>. Handig als back-up of om
-        mee te nemen naar een arts of Sensiplan-consulent.</p>
-      <p style="font-size:0.82rem; color:var(--text-soft); margin:0 0 18px;">
-        📬 Ontvanger: <b id="mailPopupEmail"></b></p>
-      <button class="primary" id="mailPopupSend">Verstuur PDF-kaart</button>
-      <button class="secondary" id="mailPopupClose" style="margin-top:8px;">Annuleren</button>
-    </div>
+    <h2 id="kaartTitle">Cycluskaart</h2>
+    <div id="interpretationBox" style="font-size:0.82rem; line-height:1.5;"></div>
   </div>
   <div class="card" style="padding:10px;">
     <div class="kaart-outer" id="kaartOuter"></div>
-    <p class="note">Scroll horizontaal. Open amber ringetje = gestoorde meting (staat op de lijn, telt niet mee
-    voor de hulplijn). &#9650; = bevestigde stijging. P 1 2 3 = piekdag-telling.
-    | = laatste onvruchtbare dag begin cyclus. v = vruchtbaar, v/ = einde vruchtbare periode.</p>
+    <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--line);">
+      <div style="font-size:0.72rem; color:var(--text-soft); margin-bottom:8px; font-weight:600;">
+        📖 Legenda <span style="font-weight:400;">— scroll horizontaal door de kaart</span></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:0.74rem;">
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:#B8860B; font-size:1rem;">◯</span>
+          <span>gestoorde meting (telt niet mee)</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--rose); font-size:0.9rem;">▲</span>
+          <span>bevestigde temperatuurstijging</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--rose); font-weight:700;">P</span>
+          <span>piekdag (dan telling 1·2·3)</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--plum-dark); font-weight:700;">|</span>
+          <span>laatste onvruchtbare dag (begin)</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--danger); font-weight:700;">v</span>
+          <span>vruchtbare dag</span></div>
+        <div style="display:flex; align-items:center; gap:7px;">
+          <span style="display:inline-block; width:18px; text-align:center; color:var(--danger); font-weight:700;">v/</span>
+          <span>einde vruchtbare periode</span></div>
+      </div>
+    </div>
   </div>
   <div class="card">
     <h2>Dagen bewerken</h2>
@@ -711,6 +778,14 @@ function computePrediction(){
 function computeStatus(cycle){
   const n = cycle.days.length;
   if(n===0) return { cls:'onbekend', label:'Nog geen gegevens', why:'Voeg je eerste dag toe.' };
+  // Bijzondere fase: geen automatische conclusie
+  if(isSpecialMode()){
+    const m=getSpecialMode();
+    const fase = m.postpil && m.borstvoeding ? 'na de pil én borstvoeding'
+      : m.postpil ? 'na de pil' : 'borstvoeding';
+    return { cls:'onbekend', label:'Bijzondere fase ('+fase+')',
+      why:'In deze fase geeft de app geen automatische veilig/onveilig-conclusie. Volg de uitleg en beoordeel zelf of met een consulent.' };
+  }
   const start = computeCycleStartInfertile(cycle);
   const end = computeInfertileAfterOvulation(cycle);
   const lastIdx = n-1;
@@ -739,7 +814,14 @@ document.querySelectorAll('nav button').forEach(btn=>{
   });
 });
 function goTab(name){ document.querySelector(`nav button[data-tab=${name}]`).click(); }
-document.getElementById('fabAdd').addEventListener('click',()=>goTab('vandaag'));
+document.getElementById('fabAdd').addEventListener('click',()=>{
+  // forceer een leeg invoerformulier voor een nieuwe dag
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  document.querySelector('nav button[data-tab=vandaag]').classList.add('active');
+  document.getElementById('tab-vandaag').classList.add('active');
+  renderVandaag('new'); // 'new' = altijd leeg formulier
+});
 document.getElementById('newCycleBtn').addEventListener('click', async ()=>{
   const afgerondeCyclus = currentCycle();
   // mail de zojuist afgeronde cyclus automatisch (stil, op de achtergrond)
@@ -752,12 +834,14 @@ document.getElementById('newCycleBtn').addEventListener('click', async ()=>{
 /* ---- Vandaag: status + invoer ---- */
 function renderVandaag(editIdx=null){
   const cycle=currentCycle();
+  const forceNew = editIdx==='new';
+  if(forceNew) editIdx=null;
   const editing = editIdx!==null;
   const day = editing? cycle.days[editIdx] : null;
   const today = todayISO();
 
   // Check: is vandaag al ingevuld?
-  const todayIdx = !editing? cycle.days.findIndex(d=>d.date===today) : -1;
+  const todayIdx = (!editing && !forceNew)? cycle.days.findIndex(d=>d.date===today) : -1;
   const todayAlreadyFilled = todayIdx !== -1;
 
   // Als vandaag al ingevuld is én niet aan het bewerken: toon status + knop ipv leeg formulier
@@ -780,6 +864,7 @@ function renderVandaag(editIdx=null){
     }
     const d=cycle.days[todayIdx];
     document.getElementById('tab-vandaag').innerHTML=`
+    ${greetingCardHtml(cycle)}
     <div class="status-hero ${status.cls}">
       <div class="big">${status.label}</div>
       <div class="why">${status.why}</div>
@@ -825,6 +910,7 @@ function renderVandaag(editIdx=null){
     </div>`;
   }
   el.innerHTML = `
+  ${!editing? greetingCardHtml(cycle) : ''}
   <div class="status-hero ${status.cls}">
     <div class="big">${status.label}</div>
     <div class="why">${status.why}</div>
@@ -1004,6 +1090,18 @@ function buildKaartInto(targetId, cycle){
       + `<canvas id="${tempId}" width="${cw*DPR}" height="${ch*DPR}" style="display:block;width:${cw}px;height:${ch}px;"></canvas>`
       + `</div>`;
   // tabel-rijen
+  const rowUitleg={
+    piek:"De piekdag (P) is de laatste dag met de beste cervixslijmkwaliteit. Daarna telt de app 1·2·3. Op de avond van dag 3 na de piek is het slijmsymptoom afgesloten.",
+    safk:"De cervixslijm-afkorting van die dag: d (droog), Ø (niets), v (vochtig), S (dik/wit/romig), S+ (helder/rekbaar/als eiwit). S+ is de meest vruchtbare kwaliteit.",
+    dagnr:"De dag van je cyclus. Dag 1 is de eerste dag van je menstruatie.",
+    datum:"De kalenderdatum van die cyclusdag.",
+    bloeding:"Menstruatie of bloeding. Bloedingsdagen worden nooit als vruchtbaar gemarkeerd.",
+    ervaren:"Wat je voelt bij de schaamlippen: droog, vochtig, nat, glibberig. Dit is de helft van je cervixslijm-observatie.",
+    uiterlijk:"Wat je ziet: kleur, structuur, rekbaarheid. Samen met het gevoel bepaalt dit de slijmkwaliteit.",
+    bmh:"De baarmoederhals als optionele dubbele controle. Symbolen: • gesloten, ○ deels open, ◯ open. Met h (hard) of z (zacht). Rond de eisprong: zacht, open, hoog.",
+    extra:"O = ovulatiepijn, B = borstsymptoom, X = gemeenschap. Extra signalen die je kunt noteren.",
+    vrucht:"De interpretatie van de app: v = vruchtbaar, v/ = laatste vruchtbare dag (einde vruchtbare periode na dubbele controle)."
+  };
   const rows=[
     {key:'piek', label:'Piekdag (P·1·2·3)'},
     {key:'safk', label:'S-afkorting'},
@@ -1018,7 +1116,7 @@ function buildKaartInto(targetId, cycle){
   ];
   html+=`<table class="kaart"><tbody>`;
   for(const row of rows){
-    html+=`<tr><th class="rowlabel">${row.label}</th>`;
+    html+=`<tr><th class="rowlabel" data-uitleg="${row.key}" style="cursor:pointer;">${row.label} <span style="opacity:0.5;">ⓘ</span></th>`;
     for(let i=0;i<n;i++){
       const d=days[i];
       let cls='', content='';
@@ -1065,7 +1163,14 @@ function buildKaartInto(targetId, cycle){
   html+=`</tbody></table></div>`;
   document.getElementById(targetId).innerHTML=html;
 
-  // === Kleuren ===
+  // rijlabels klikbaar → uitleg-popup
+  document.getElementById(targetId).querySelectorAll('th.rowlabel[data-uitleg]').forEach(th=>{
+    th.addEventListener('click',()=>{
+      const key=th.dataset.uitleg;
+      showColumnInfo(th.textContent.replace('ⓘ','').trim(), rowUitleg[key]||'');
+    });
+  });
+
   const dark=document.body.classList.contains('dark');
   const C={
     gridMajor: dark?'#4A3E52':'#DCCFC7',
@@ -1164,6 +1269,8 @@ function uiterlijkText(d){
   return (d.uiterlijk||'').slice(0,22);
 }
 function dayFertility(i,start,end,day){
+  // in bijzondere fase (post-pil/borstvoeding) geen automatische v-markering
+  if(typeof isSpecialMode==='function' && isSpecialMode()) return '';
   // bloedingsdagen zijn nooit vruchtbaar in de kaart-markering
   if(day && day.bloeding) return '';
   if(end.combined!==null){
@@ -1223,26 +1330,186 @@ async function loadTheme(){
 }
 function applyTheme(dark){
   document.body.classList.toggle('dark', dark);
-  const btn=document.getElementById('themeToggle');
-  if(btn) btn.innerHTML = dark ? '&#9728;&#65039;' : '&#127769;'; // zon in dark, maan in light
+  const dt=document.getElementById('darkToggle');
+  if(dt) dt.checked=dark;
 }
-document.getElementById('themeToggle').addEventListener('click', async ()=>{
-  const dark=!document.body.classList.contains('dark');
+
+/* ---- Instellingen popup ---- */
+function openSettings(){
+  const p=document.getElementById('settingsPopup');
+  // vul huidige waarden
+  document.getElementById('darkToggle').checked=document.body.classList.contains('dark');
+  const remOn=getReminderEnabled();
+  document.getElementById('setReminderToggle').checked=remOn;
+  document.getElementById('setReminderTime').value=getReminderTime();
+  document.getElementById('setReminderTimeRow').style.display=remOn?'':'none';
+  document.getElementById('setMailEmail').textContent=currentUser?currentUser.email:'—';
+  const mp=document.getElementById('modePostPil'); if(mp) mp.checked=localStorage.getItem('cyclus_mode_postpil')==='1';
+  const mb=document.getElementById('modeBorstvoeding'); if(mb) mb.checked=localStorage.getItem('cyclus_mode_borstvoeding')==='1';
+  updateReminderStatus();
+  p.style.display='flex';
+}
+function updateReminderStatus(){
+  const el=document.getElementById('setReminderStatus'); if(!el) return;
+  if(!('Notification' in window)){ el.textContent='Meldingen worden niet ondersteund op dit toestel.'; return; }
+  if(Notification.permission==='denied'){ el.textContent='Meldingen zijn geblokkeerd in je browserinstellingen.'; return; }
+  el.textContent = getReminderEnabled() ? 'Je krijgt elke dag een melding rond de ingestelde tijd.' : '';
+}
+document.getElementById('settingsBtn').addEventListener('click', openSettings);
+document.getElementById('settingsClose').addEventListener('click', ()=>{
+  document.getElementById('settingsPopup').style.display='none';
+});
+
+/* ---- Bijzondere fase (post-pil / borstvoeding) ---- */
+function getSpecialMode(){
+  return {
+    postpil: localStorage.getItem('cyclus_mode_postpil')==='1',
+    borstvoeding: localStorage.getItem('cyclus_mode_borstvoeding')==='1'
+  };
+}
+function isSpecialMode(){
+  const m=getSpecialMode(); return m.postpil || m.borstvoeding;
+}
+function bindModeToggle(id, key){
+  const el=document.getElementById(id); if(!el) return;
+  el.checked = localStorage.getItem(key)==='1';
+  el.addEventListener('change',(e)=>{
+    localStorage.setItem(key, e.target.checked?'1':'0');
+    // ververs de zichtbare tab
+    const active=document.querySelector('nav button.active');
+    if(active) active.click();
+  });
+}
+bindModeToggle('modePostPil','cyclus_mode_postpil');
+bindModeToggle('modeBorstvoeding','cyclus_mode_borstvoeding');
+document.getElementById('settingsPopup').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('settingsPopup'))
+    document.getElementById('settingsPopup').style.display='none';
+});
+document.getElementById('darkToggle').addEventListener('change',(e)=>{
+  const dark=e.target.checked;
   applyTheme(dark);
   try{ localStorage.setItem('sensiplan_theme', dark?'dark':'light'); }catch(e){}
-  // hertekenen als de kaart open is
-  const kaartActive=document.getElementById('tab-kaart').classList.contains('active');
-  if(kaartActive) renderKaart();
+  if(document.getElementById('tab-kaart').classList.contains('active')) renderKaart();
 });
+document.getElementById('setReminderToggle').addEventListener('change', async (e)=>{
+  if(e.target.checked){
+    const granted=await requestNotificationPermission();
+    if(!granted){ e.target.checked=false; updateReminderStatus(); return; }
+    setReminderEnabled(true);
+    document.getElementById('setReminderTimeRow').style.display='';
+    scheduleDailyReminder();
+  } else {
+    setReminderEnabled(false);
+    document.getElementById('setReminderTimeRow').style.display='none';
+    if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
+  }
+  updateReminderStatus();
+});
+document.getElementById('setReminderTime').addEventListener('change',(e)=>{
+  setReminderTime(e.target.value);
+  scheduleDailyReminder();
+});
+document.getElementById('setMailSend').addEventListener('click', async ()=>{
+  const btn=document.getElementById('setMailSend');
+  btn.textContent='Versturen…'; btn.disabled=true;
+  const ok=await sendCycleMail(currentCycle(), false);
+  btn.disabled=false;
+  btn.textContent = ok ? '✓ Verstuurd!' : 'Verstuur PDF-kaart';
+  setTimeout(()=>{ btn.textContent='Verstuur PDF-kaart'; }, 3000);
+});
+
+/* ---- Kolom-uitleg popup ---- */
+function showColumnInfo(title, text){
+  document.getElementById('colInfoTitle').textContent=title;
+  document.getElementById('colInfoText').textContent=text;
+  document.getElementById('colInfoPopup').style.display='flex';
+}
+document.getElementById('colInfoClose').addEventListener('click',()=>{
+  document.getElementById('colInfoPopup').style.display='none';
+});
+document.getElementById('colInfoPopup').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('colInfoPopup'))
+    document.getElementById('colInfoPopup').style.display='none';
+});
+
+/* ---- Begroeting met bijbeltekst (HSV) en fase-uitleg ---- */
+const BIJBELTEKSTEN = [
+  {t:"Ik loof U, omdat ik ontzagwekkend wonderlijk gemaakt ben; wonderlijk zijn Uw werken, mijn ziel weet dat zeer goed.", r:"Psalm 139:14"},
+  {t:"Alles heeft zijn tijd, en ieder ding onder de hemel heeft zijn uur.", r:"Prediker 3:1"},
+  {t:"De HEERE is mijn Herder, mij ontbreekt niets.", r:"Psalm 23:1"},
+  {t:"Wees in geen ding bezorgd, maar laat uw verlangens in alles, door bidden en smeken, met dankzegging bekend worden bij God.", r:"Filippenzen 4:6"},
+  {t:"Werp al uw zorgen op Hem, want Hij zorgt voor u.", r:"1 Petrus 5:7"},
+  {t:"Zie, kinderen zijn het eigendom van de HEERE, de vrucht van de schoot is Zijn beloning.", r:"Psalm 127:3"},
+  {t:"Deze is de dag die de HEERE gemaakt heeft, laten wij op deze dag ons verheugen en verblijd zijn.", r:"Psalm 118:24"},
+  {t:"Want Ik ken de gedachten die Ik over u koester, spreekt de HEERE. Het zijn gedachten van vrede en niet van kwaad.", r:"Jeremia 29:11"},
+  {t:"De HEERE zal het voor mij voleindigen; Uw goedertierenheid, HEERE, is voor eeuwig.", r:"Psalm 138:8"},
+  {t:"Wentel uw weg op de HEERE en vertrouw op Hem: Híj zal het doen.", r:"Psalm 37:5"},
+  {t:"Verblijd u altijd in de Heere; ik zeg het opnieuw: Verblijd u.", r:"Filippenzen 4:4"},
+  {t:"Wie de HEERE verwachten, zullen hun kracht vernieuwen, zij zullen hun vleugels uitslaan als arenden.", r:"Jesaja 40:31"},
+  {t:"Uw woord is een lamp voor mijn voet en een licht op mijn pad.", r:"Psalm 119:105"},
+  {t:"Want bij U is de bron van het leven; in Uw licht zien wij het licht.", r:"Psalm 36:10"},
+  {t:"De HEERE is nabij de gebrokenen van hart, Hij verlost de verbrijzelden van geest.", r:"Psalm 34:19"}
+];
+function verseOfToday(){
+  const d=new Date();
+  const dayOfYear=Math.floor((d-new Date(d.getFullYear(),0,0))/86400000);
+  return BIJBELTEKSTEN[dayOfYear % BIJBELTEKSTEN.length];
+}
+function greetingText(){
+  const h=new Date().getHours();
+  if(h<6) return "Goedenacht";
+  if(h<12) return "Goedemorgen";
+  if(h<18) return "Goedemiddag";
+  return "Goedenavond";
+}
+function phaseDescription(cycle){
+  // Bijzondere fase heeft voorrang
+  const m=getSpecialMode();
+  if(m.borstvoeding)
+    return "Borstvoedingsfase: zolang je volledig borstvoeding geeft, je kind jonger dan 6 maanden is én je nog niet ongesteld bent geweest, is vruchtbaarheid vrijwel uitgesloten (LAM). Zodra één daarvan wegvalt, gelden de gewone regels — maar met extra voorzichtigheid. De app trekt geen automatische conclusie.";
+  if(m.postpil)
+    return "Na de pil: je cyclus moet zich opnieuw instellen en kan onregelmatig zijn. De temperatuurstijging is nog niet betrouwbaar. Let vooral op je cervixslijm en wees voorzichtig. De app trekt geen automatische conclusie.";
+  const n=cycle.days.length;
+  if(n===0) return "Je staat aan het begin van een nieuwe cyclus. Voer je eerste dag in om te beginnen.";
+  const end=computeInfertileAfterOvulation(cycle);
+  const start=computeCycleStartInfertile(cycle);
+  const lastIdx=n-1;
+  const lastDay=cycle.days[lastIdx];
+  if(lastDay && lastDay.bloeding)
+    return `Je bent ongesteld (dag ${n} van je cyclus). Het begin van een nieuwe cyclus — een tijd van rust en herstel.`;
+  if(end.combined!==null && lastIdx>=end.combined)
+    return `Je bevindt je in de onvruchtbare fase na de eisprong (dag ${n}). De dubbele controle is afgesloten.`;
+  if(end.rise && !end.combined)
+    return `Je temperatuur is aan het stijgen (dag ${n}) — de eisprong lijkt achter de rug, maar de dubbele controle is nog niet compleet.`;
+  if(lastIdx < start.lastSafeDay)
+    return `Je bent in de onvruchtbare fase aan het begin van je cyclus (dag ${n}). Let op: zodra er slijm of vocht komt, wordt het vruchtbaar.`;
+  return `Je bevindt je in de vruchtbare fase (dag ${n}). Dit is de tijd rond de eisprong — let goed op je cervixslijm en temperatuur.`;
+}
+function greetingCardHtml(cycle){
+  const v=verseOfToday();
+  return `<div class="greeting-card">
+    <div class="greeting-hi">${greetingText()} 🌷</div>
+    <div class="greeting-verse">"${v.t}"</div>
+    <div class="greeting-ref">— ${v.r} (HSV)</div>
+    <div class="greeting-phase">${phaseDescription(cycle)}</div>
+  </div>`;
+}
 
 /* ---- Agenda: maandoverzicht ---- */
 function buildDayStatusMap(){
   // map 'YYYY-MM-DD' -> 'bloeding' | 'vrucht' | 'onvrucht'
   const map={};
+  const special=isSpecialMode();
   for(const c of DATA.cycles){
     const start=computeCycleStartInfertile(c);
     const end=computeInfertileAfterOvulation(c);
     c.days.forEach((d,i)=>{
+      if(special){
+        // bijzondere fase: geen vruchtbaar/onvruchtbaar-inkleuring, alleen bloeding
+        if(d.bloeding) map[d.date]='bloeding';
+        return;
+      }
       let st='onvrucht';
       const f=dayFertility(i,start,end,d);
       if(f==='v'||f==='v/') st='vrucht';
@@ -1250,6 +1517,7 @@ function buildDayStatusMap(){
       map[d.date]=st;
     });
   }
+  if(special) return map; // geen voorspelling in bijzondere modus
   // voorspelling: verwachte volgende menstruatie + vruchtbaar venster als 'pred'
   const pred=computePrediction();
   if(pred){
@@ -1479,36 +1747,6 @@ async function sendCycleMail(cycle, silent){
     return false;
   }
 }
-/* ---- Mail popup ---- */
-document.getElementById('mailIconBtn').addEventListener('click', ()=>{
-  const popup=document.getElementById('mailPopup');
-  const emailEl=document.getElementById('mailPopupEmail');
-  if(emailEl) emailEl.textContent = currentUser ? currentUser.email : '—';
-  popup.style.display='flex';
-});
-document.getElementById('mailPopupClose').addEventListener('click', ()=>{
-  document.getElementById('mailPopup').style.display='none';
-});
-document.getElementById('mailPopup').addEventListener('click', (e)=>{
-  if(e.target===document.getElementById('mailPopup'))
-    document.getElementById('mailPopup').style.display='none';
-});
-document.getElementById('mailPopupSend').addEventListener('click', async ()=>{
-  const btn=document.getElementById('mailPopupSend');
-  btn.textContent='Versturen…'; btn.disabled=true;
-  const ok=await sendCycleMail(currentCycle(), false);
-  btn.disabled=false;
-  if(ok){
-    btn.textContent='✓ Verstuurd!';
-    setTimeout(()=>{
-      document.getElementById('mailPopup').style.display='none';
-      btn.textContent='Verstuur PDF-kaart';
-    }, 2000);
-  } else {
-    btn.textContent='Verstuur PDF-kaart';
-  }
-});
-
 /* ---- Demo data ---- */
 function makeDemoCycle(nummer, startISO){
   // realistische ~29-daagse cyclus met stijging rond dag 16-17 en piekdag dag 15
