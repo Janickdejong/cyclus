@@ -32,13 +32,17 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--bg); color:var(--text);
-    font-family:"Avenir Next","Segoe UI",sans-serif; padding-bottom:80px; transition:background .25s;}
+    font-family:"Avenir Next","Segoe UI",sans-serif; padding-bottom:80px; transition:background .25s;
+    background-image:radial-gradient(circle at 15% 8%, rgba(201,123,132,0.05), transparent 42%),
+      radial-gradient(circle at 88% 22%, rgba(124,154,130,0.05), transparent 40%);
+    background-attachment:fixed;}
   header{background:linear-gradient(135deg,var(--plum),var(--plum-dark));
-    color:#fff; padding:18px 16px 16px; border-radius:0 0 20px 20px;
-    display:flex; justify-content:space-between; align-items:flex-start;}
+    color:#fff; padding:20px 18px 18px; border-radius:0 0 24px 24px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    box-shadow:0 4px 20px rgba(62,39,53,0.18);}
   body.dark header{background:linear-gradient(135deg,#3E2735,#241723);}
-  header h1{font-family:Georgia,serif; margin:0; font-size:1.35rem;}
-  header .sub{font-size:0.8rem; opacity:0.85; margin-top:3px;}
+  header h1{font-family:'Cormorant Garamond',Georgia,serif; margin:0; font-size:1.7rem; font-weight:600; letter-spacing:0.3px;}
+  header .sub{font-size:0.78rem; opacity:0.82; margin-top:2px; letter-spacing:0.2px;}
   #settingsBtn{background:rgba(255,255,255,0.15); border:none; color:#fff;
     width:40px; height:40px; border-radius:50%; cursor:pointer; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;}
@@ -46,13 +50,15 @@
     background:var(--nav-bg); z-index:20; border-bottom:1px solid var(--line);
     max-width:640px; margin:0 auto;}
   nav button{flex:1; padding:9px 2px; border:none; border-radius:12px;
-    background:transparent; color:var(--plum-dark); font-weight:600; font-size:0.8rem; cursor:pointer;}
+    background:transparent; color:var(--plum-dark); font-weight:600; font-size:0.8rem; cursor:pointer;
+    letter-spacing:0.2px; transition:background .15s;}
   nav button.active{background:var(--plum); color:#fff;}
-  main{padding:12px; max-width:640px; margin:0 auto;}
+  main{padding:14px; max-width:640px; margin:0 auto;}
   section{display:none;} section.active{display:block;}
-  .card{background:var(--surface); border-radius:16px; padding:15px; margin-bottom:12px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.12);}
-  .card h2{margin:0 0 10px; font-size:1rem; color:var(--plum-dark); font-family:Georgia,serif;}
+  .card{background:var(--surface); border-radius:18px; padding:17px; margin-bottom:13px;
+    box-shadow:0 3px 16px rgba(91,58,75,0.09);}
+  .card h2{margin:0 0 11px; font-size:1.15rem; color:var(--plum-dark);
+    font-family:'Cormorant Garamond',Georgia,serif; font-weight:600; letter-spacing:0.3px;}
   label{display:block; font-size:0.76rem; color:var(--text-soft); margin:10px 0 4px; font-weight:600;}
   input,select,textarea{width:100%; padding:9px 10px; border-radius:10px;
     border:1px solid var(--line); background:var(--input-bg); color:var(--text); font-size:0.95rem; font-family:inherit;}
@@ -62,14 +68,18 @@
   .chip{padding:8px 12px; border-radius:20px; border:1px solid var(--line);
     background:var(--input-bg); color:var(--text); font-size:0.8rem; cursor:pointer; user-select:none;}
   .chip.sel{background:var(--rose); color:#fff; border-color:var(--rose);}
-  button.primary{width:100%; margin-top:14px; padding:13px; border:none; border-radius:12px;
-    background:var(--plum); color:#fff; font-size:0.95rem; font-weight:700; cursor:pointer;}
-  button.secondary{width:100%; margin-top:8px; padding:10px; border:1px solid var(--plum);
-    border-radius:12px; background:transparent; color:var(--plum); font-size:0.85rem; font-weight:600; cursor:pointer;}
-  .note{font-size:0.75rem; color:var(--text-soft); margin-top:6px; line-height:1.45;}
+  button.primary{width:100%; margin-top:14px; padding:14px; border:none; border-radius:14px;
+    background:linear-gradient(135deg,var(--plum),var(--plum-dark)); color:#fff;
+    font-size:0.95rem; font-weight:600; cursor:pointer; letter-spacing:0.3px;
+    box-shadow:0 3px 12px rgba(91,58,75,0.22); transition:transform .1s;}
+  button.primary:active{transform:scale(0.98);}
+  body.dark button.primary{background:linear-gradient(135deg,#7A5266,#5B3A4B); color:#fff;}
+  button.secondary{width:100%; margin-top:8px; padding:11px; border:1px solid var(--line);
+    border-radius:14px; background:var(--surface); color:var(--plum-dark); font-size:0.85rem; font-weight:600; cursor:pointer;}
+  .note{font-size:0.75rem; color:var(--text-soft); margin-top:6px; line-height:1.5;}
   .muted{color:var(--text-soft); font-size:0.78rem;}
-  .warn{background:#FCEFD8; border:1px solid #EAD3A0; border-radius:10px;
-    padding:10px 12px; font-size:0.78rem; color:#7A5C1F; margin-bottom:10px; line-height:1.5;}
+  .warn{background:#FCEFD8; border:1px solid #EAD3A0; border-radius:12px;
+    padding:11px 13px; font-size:0.78rem; color:#7A5C1F; margin-bottom:10px; line-height:1.5;}
   body.dark .warn{background:#3A3020; border-color:#5C4A28; color:#E8C97A;}
 
   /* Status hero */
@@ -125,44 +135,73 @@
     padding:11px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
   .cyclelist .citem:last-child{border-bottom:none;}
   .cyclelist b{color:var(--plum-dark);}
-  .fab-add{position:fixed; right:16px; bottom:16px; width:56px; height:56px; border-radius:50%;
-    background:var(--rose); color:#fff; font-size:1.7rem; border:none;
-    box-shadow:0 4px 14px rgba(0,0,0,0.25); cursor:pointer; z-index:30;}
+  .fab-add{position:fixed; right:18px; bottom:18px; width:58px; height:58px; border-radius:50%;
+    background:linear-gradient(135deg,#D68A93,#C05C6B); color:#fff; font-size:1.8rem; border:none;
+    box-shadow:0 5px 18px rgba(192,92,107,0.4); cursor:pointer; z-index:30; line-height:1;
+    transition:transform .12s;}
+  .fab-add:active{transform:scale(0.9);}
   .daylist-item{display:flex; justify-content:space-between; padding:8px 2px;
     border-bottom:1px solid var(--line); font-size:0.82rem; align-items:center;}
   .daylist-item button{border:none; background:none; color:var(--plum); font-size:0.75rem;
     cursor:pointer; text-decoration:underline; padding:4px;}
   /* Begroeting / bijbeltekst */
-  .greeting-card{background:linear-gradient(135deg,var(--plum),var(--plum-dark)); color:#fff;
-    border-radius:16px; padding:20px 18px; margin-bottom:12px;}
-  body.dark .greeting-card{background:linear-gradient(135deg,#3E2735,#241723);}
-  .greeting-hi{font-size:0.95rem; opacity:0.9; margin-bottom:10px;}
-  .greeting-verse{font-family:'Cormorant Garamond',Georgia,serif; font-size:1.35rem;
-    line-height:1.4; font-style:italic; font-weight:500;}
-  .greeting-ref{font-size:0.8rem; opacity:0.85; margin-top:8px; font-family:'Cormorant Garamond',serif; font-weight:600;}
-  .greeting-phase{font-size:0.82rem; opacity:0.95; margin-top:14px; padding-top:12px;
-    border-top:1px solid rgba(255,255,255,0.2); line-height:1.5;}
+  .greeting-card{position:relative; overflow:hidden;
+    background:linear-gradient(150deg,#fff,var(--cream));
+    border:1px solid var(--line); color:var(--text);
+    border-radius:18px; padding:22px 20px; margin-bottom:13px;
+    box-shadow:0 3px 16px rgba(91,58,75,0.09);}
+  body.dark .greeting-card{background:linear-gradient(150deg,#2A2230,#241b28); border-color:var(--line);}
+  .greeting-card .bloem-wm{position:absolute; right:-24px; top:-24px; width:130px; height:130px;
+    opacity:0.07; pointer-events:none;}
+  .greeting-hi{font-size:0.9rem; color:var(--text-soft); margin-bottom:12px; font-weight:600; letter-spacing:0.2px;}
+  .greeting-verse{font-family:'Cormorant Garamond',Georgia,serif; font-size:1.5rem;
+    line-height:1.35; font-style:italic; font-weight:500; color:var(--plum-dark); position:relative;}
+  .greeting-ref{font-size:0.82rem; color:var(--rose); margin-top:10px;
+    font-family:'Cormorant Garamond',serif; font-weight:600; letter-spacing:0.3px;}
+  .greeting-status{display:inline-flex; align-items:center; gap:7px; margin-top:16px;
+    padding:7px 14px; border-radius:20px; font-size:0.82rem; font-weight:600;}
+  .greeting-status.vrucht{background:rgba(192,92,107,0.14); color:#9E3F52;}
+  .greeting-status.onvrucht{background:rgba(110,146,118,0.16); color:#4E6B54;}
+  .greeting-status.onbekend{background:rgba(154,139,147,0.16); color:#7A6B74;}
+  body.dark .greeting-status.vrucht{background:rgba(201,123,132,0.2); color:#E8A4AC;}
+  body.dark .greeting-status.onvrucht{background:rgba(124,154,130,0.2); color:#A8C9B0;}
+  body.dark .greeting-status.onbekend{background:rgba(184,169,180,0.2); color:#C8B9C4;}
+  .greeting-status .dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .greeting-status.vrucht .dot{background:#C05C6B;}
+  .greeting-status.onvrucht .dot{background:#6E9276;}
+  .greeting-status.onbekend .dot{background:#9A8B93;}
+  .greeting-phase{font-size:0.84rem; color:var(--text-soft); margin-top:14px; padding-top:13px;
+    border-top:1px solid var(--line); line-height:1.55;}
+  /* Losse status-hero (nog gebruikt in editing/bare fallback) */
+  .status-hero{border-radius:16px; padding:16px; margin-bottom:12px; color:#fff;}
+  .status-hero.vrucht{background:linear-gradient(135deg,#C05C6B,#9E3F52);}
+  .status-hero.onvrucht{background:linear-gradient(135deg,#6E9276,#4E6B54);}
+  .status-hero.onbekend{background:linear-gradient(135deg,#9A8B93,#7A6B74);}
+  .status-hero .big{font-size:1.15rem; font-weight:600; font-family:'Cormorant Garamond',Georgia,serif;}
+  .status-hero .why{font-size:0.8rem; opacity:0.92; margin-top:5px; line-height:1.45;}
   /* Agenda maandkalender */
   .month-block{margin-bottom:18px;}
-  .month-title{font-family:Georgia,serif; color:var(--plum-dark); font-size:0.95rem; margin:4px 0 6px;}
-  .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px;}
-  .dow{font-size:0.62rem; color:var(--text-soft); text-align:center; padding:2px 0;}
-  .mday{aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center;
-    font-size:0.72rem; background:var(--input-bg); color:var(--text-soft); position:relative;}
+  .month-title{font-family:'Cormorant Garamond',Georgia,serif; color:var(--plum-dark);
+    font-size:1.15rem; font-weight:600; margin:4px 0 8px;}
+  .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
+  .dow{font-size:0.64rem; color:var(--text-soft); text-align:center; padding:2px 0; font-weight:600;}
+  .mday{aspect-ratio:1; border-radius:11px; display:flex; align-items:center; justify-content:center;
+    font-size:0.78rem; background:var(--input-bg); color:var(--text-soft); position:relative;
+    transition:transform .1s;}
+  .mday:active{transform:scale(0.92);}
   .mday.empty{background:transparent;}
-  .mday.bloeding{background:#C05C6B; color:#fff; font-weight:600;}
-  .mday.vrucht{background:#F3C9CF; color:#7A3A48; font-weight:600;}
+  .mday.bloeding{background:linear-gradient(145deg,#C86673,#A8455A); color:#fff; font-weight:600;}
+  .mday.vrucht{background:#F5D2D7; color:#8E4453; font-weight:600;}
   body.dark .mday.vrucht{background:#6B3A48; color:#F3C9CF;}
-  .mday.onvrucht{background:#DCE9DE; color:#3E5C46;}
+  .mday.onvrucht{background:#DFEBE1; color:#3E5C46;}
   body.dark .mday.onvrucht{background:#2F4536; color:#A8C9B0;}
   .mday.pred{border:1.5px dashed var(--rose); background:transparent; color:var(--rose);}
-  .mday.today{outline:2px solid var(--plum-dark); outline-offset:1px;}
-  .mday{position:relative;}
-  .sex-dot{position:absolute; bottom:1px; right:2px; font-size:0.5rem; color:#C0392B; line-height:1;}
+  .mday.today{box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--plum-dark);}
+  .sex-dot{position:absolute; bottom:2px; right:3px; font-size:0.55rem; color:#C0392B; line-height:1;}
   body.dark .sex-dot{color:#FF8080;}
-  .aleg{width:11px; height:11px; border-radius:4px; display:inline-block; vertical-align:-1px; margin-right:3px;}
-  .bloed-dot{background:#C05C6B;} .fert-dot{background:#F3C9CF;}
-  .onvr-dot{background:#DCE9DE;} .pred-dot{border:1.5px dashed var(--rose);}
+  .aleg{width:12px; height:12px; border-radius:5px; display:inline-block; vertical-align:-2px; margin-right:4px;}
+  .bloed-dot{background:linear-gradient(145deg,#C86673,#A8455A);} .fert-dot{background:#F5D2D7;}
+  .onvr-dot{background:#DFEBE1;} .pred-dot{border:1.5px dashed var(--rose);}
   /* Login-overlay */
   #authOverlay{position:fixed; inset:0; background:var(--bg); z-index:100;
     display:flex; align-items:center; justify-content:center; padding:20px;}
@@ -903,13 +942,9 @@ function renderVandaag(editIdx=null){
     const d=cycle.days[todayIdx];
     document.getElementById('tab-vandaag').innerHTML=`
     ${greetingCardHtml(cycle)}
-    <div class="status-hero ${status.cls}">
-      <div class="big">${status.label}</div>
-      <div class="why">${status.why}</div>
-    </div>
     ${predHtml}
     <div class="card">
-      <h2>✅ Vandaag al ingevuld</h2>
+      <h2>Vandaag al ingevuld</h2>
       <p style="font-size:0.85rem; margin:4px 0;">
         Temperatuur: <b>${d.temp?d.temp+'°C'+(d.gestoord?' (gestoord)':''):'—'}</b> &nbsp;·&nbsp;
         Slijm: <b>${d.cervixAfk||'—'}</b> &nbsp;·&nbsp;
@@ -948,15 +983,15 @@ function renderVandaag(editIdx=null){
     </div>`;
   }
   el.innerHTML = `
-  ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px;">
-    <span style="font-family:Georgia,serif; color:var(--plum-dark); font-size:1.05rem;">➕ Dag invullen</span>
+  ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:13px 16px;">
+    <span style="font-family:'Cormorant Garamond',Georgia,serif; color:var(--plum-dark); font-size:1.25rem; font-weight:600;">Dag invullen</span>
     <button class="secondary" id="bareBackBtn" style="margin:0; width:auto; padding:6px 14px;">← Terug</button>
   </div>` : ''}
   ${bare? '' : (!editing? greetingCardHtml(cycle) : '')}
-  ${bare? '' : `<div class="status-hero ${status.cls}">
+  ${(!bare && editing)? `<div class="status-hero ${status.cls}">
     <div class="big">${status.label}</div>
     <div class="why">${status.why}</div>
-  </div>`}
+  </div>` : ''}
   ${bare? '' : predHtml}
   <div class="card">
     <h2>${editing? 'Dag '+dayNum+' bewerken' : (bare? 'Gegevens' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren')}</h2>
@@ -1561,11 +1596,17 @@ function phaseDescription(cycle){
 }
 function greetingCardHtml(cycle){
   const v=verseOfToday();
+  const status=computeStatus(cycle);
+  const bloemWm=`<svg class="bloem-wm" viewBox="0 0 512 512"><g transform="translate(256,256)">
+    ${[0,45,90,135,180,225,270,315].map(a=>`<ellipse rx="52" ry="90" transform="rotate(${a}) translate(0,-78)" fill="#C97B84"/>`).join('')}
+    <circle r="58" fill="#5B3A4B"/></g></svg>`;
   return `<div class="greeting-card">
-    <div class="greeting-hi">${greetingText()} 🌷</div>
+    ${bloemWm}
+    <div class="greeting-hi">${greetingText()}</div>
     <div class="greeting-verse">"${v.t}"</div>
     <div class="greeting-ref">— ${v.r} (HSV)</div>
-    <div class="greeting-phase">${phaseDescription(cycle)}</div>
+    <div class="greeting-status ${status.cls}"><span class="dot"></span>${status.label}</div>
+    <div class="greeting-phase">${status.why? '<b style="color:var(--text);">'+status.why+'</b><br><br>' : ''}${phaseDescription(cycle)}</div>
   </div>`;
 }
 
