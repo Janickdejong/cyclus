@@ -180,6 +180,7 @@
   <button data-tab="kaart">Kaart</button>
   <button data-tab="agenda">Agenda</button>
   <button data-tab="cycli">Cycli</button>
+  <button data-tab="voorbeeld">Voorbeeld</button>
   <button data-tab="info">Uitleg</button>
 </nav>
 
@@ -225,6 +226,19 @@
   </div>
 </section>
 
+<section id="tab-voorbeeld">
+  <div class="card">
+    <h2>&#129514; Voorbeeldcyclus</h2>
+    <p class="note" style="font-size:0.84rem;">Dit is een voorbeeld ter uitleg &mdash; het staat los van jouw eigen
+    gegevens. Zo ziet een volle kaart eruit met een stijging, een piekdag en de vruchtbare dagen.</p>
+  </div>
+  <div class="card">
+    <h2 id="voorbeeldTitle">Cycluskaart</h2>
+    <div id="voorbeeldInterpretationBox" class="note" style="font-size:0.84rem;"></div>
+    <div class="kaart-outer" id="voorbeeldKaartOuter"></div>
+  </div>
+</section>
+
 <section id="tab-info">
   <div class="card">
     <h2>Hoe werkt dit?</h2>
@@ -240,10 +254,8 @@
   </div>
   <div class="card">
     <h2>&#129514; Voorbeeld bekijken</h2>
-    <p class="note" style="font-size:0.84rem;">Laad twee complete voorbeeldcycli om te zien hoe een volle kaart
-    eruitziet (met stijging, piekdag, vruchtbare dagen en een voorspelling). Dit vervangt je huidige gegevens
-    niet permanent — met "Alles wissen" begin je weer blanco.</p>
-    <button class="secondary" id="loadDemoBtn">Voorbeeldcycli laden</button>
+    <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet (met stijging, piekdag en
+    vruchtbare dagen)? Kijk in het tabblad "Voorbeeld" &mdash; dat staat helemaal los van jouw eigen gegevens.</p>
     <button class="secondary danger" id="wipeBtn" style="border-color:var(--danger); color:var(--danger);">Alles wissen &amp; opnieuw beginnen</button>
   </div>
   <div class="card"><h2>Gestoorde metingen</h2>
@@ -463,6 +475,7 @@ document.querySelectorAll('nav button').forEach(btn=>{
       if(btn.dataset.tab==='vandaag') renderVandaag();
       if(btn.dataset.tab==='kaart') renderKaart();
       if(btn.dataset.tab==='agenda') renderAgenda();
+      if(btn.dataset.tab==='voorbeeld') renderVoorbeeld();
       if(btn.dataset.tab==='cycli') renderCycleList();
     }catch(e){ console.error('Render error:',e); alert('Fout bij tonen: '+e.message); }
   });
@@ -631,7 +644,10 @@ function renderInterpretation(cycle){
     h+=`<p style="margin:6px 0;"><b style="color:var(--sage-dark);">Onvruchtbaar vanaf avond dag ${end.combined+1}</b> (${end.basis}, wat het laatst komt).</p>`;
   box.innerHTML=h;
 }
-function buildKaart(cycle){
+function buildKaart(cycle){ buildKaartInto('kaartOuter', cycle); }
+function buildKaartInto(targetId, cycle){
+  const axisId = targetId==='kaartOuter' ? 'axisCanvas' : targetId+'_axisCanvas';
+  const tempId = targetId==='kaartOuter' ? 'tempCanvas' : targetId+'_tempCanvas';
   const days=cycle.days;
   const n=Math.max(days.length,10);
   const rise=computeTempRise(cycle);
@@ -646,8 +662,8 @@ function buildKaart(cycle){
   const DPR=Math.min(window.devicePixelRatio||1, 3);
   let html=`<div class="kaart-inner">`;
   html+=`<div class="chart-row">`
-      + `<canvas id="axisCanvas" width="${labelW*DPR}" height="${ch*DPR}" class="axis-canvas" style="width:${labelW}px;height:${ch}px;"></canvas>`
-      + `<canvas id="tempCanvas" width="${cw*DPR}" height="${ch*DPR}" style="display:block;width:${cw}px;height:${ch}px;"></canvas>`
+      + `<canvas id="${axisId}" width="${labelW*DPR}" height="${ch*DPR}" class="axis-canvas" style="width:${labelW}px;height:${ch}px;"></canvas>`
+      + `<canvas id="${tempId}" width="${cw*DPR}" height="${ch*DPR}" style="display:block;width:${cw}px;height:${ch}px;"></canvas>`
       + `</div>`;
   // tabel-rijen
   const rows=[
@@ -705,7 +721,7 @@ function buildKaart(cycle){
     html+=`</tr>`;
   }
   html+=`</tbody></table></div>`;
-  document.getElementById('kaartOuter').innerHTML=html;
+  document.getElementById(targetId).innerHTML=html;
 
   // === Kleuren ===
   const dark=document.body.classList.contains('dark');
@@ -725,7 +741,7 @@ function buildKaart(cycle){
   const xFor=i=>i*dayW+dayW/2; // datacanvas begint bij 0
 
   // === Vaste as (cijfers links) ===
-  const ax=document.getElementById('axisCanvas'), actx=ax.getContext('2d');
+  const ax=document.getElementById(axisId), actx=ax.getContext('2d');
   actx.setTransform(DPR,0,0,DPR,0,0);
   actx.clearRect(0,0,labelW,ch);
   actx.fillStyle=C.axisBg; actx.fillRect(0,0,labelW,ch);
@@ -739,7 +755,7 @@ function buildKaart(cycle){
   }
 
   // === Scrollende grafiek (data) ===
-  const cv=document.getElementById('tempCanvas'), ctx=cv.getContext('2d');
+  const cv=document.getElementById(tempId), ctx=cv.getContext('2d');
   ctx.setTransform(DPR,0,0,DPR,0,0);
   ctx.clearRect(0,0,cw,ch);
   ctx.font='9px sans-serif';
@@ -1148,17 +1164,25 @@ function makeDemoCycle(nummer, startISO){
   }
   return { id:'demo'+nummer+'_'+Date.now(), nummer, startDate:startISO, days };
 }
-document.getElementById('loadDemoBtn').addEventListener('click', async ()=>{
-  const start1='2026-05-01';
-  const c1=makeDemoCycle(1,start1);
-  const start2=addDays(start1,29);
-  const c2=makeDemoCycle(2,start2);
-  c2.days=c2.days.slice(0,18);
-  DATA={ cycles:[c1,c2] };
-  currentCycleId=c2.id;
-  await saveData();
-  goTab('kaart');
-});
+/* ---- Voorbeeldpagina (los van eigen data, raakt DATA nooit aan) ---- */
+function renderVoorbeeld(){
+  const demo = makeDemoCycle(1, '2026-05-01');
+  document.getElementById('voorbeeldTitle').textContent =
+    `Cycluskaart — voorbeeld (start ${fmtDate(demo.startDate)})`;
+
+  const box=document.getElementById('voorbeeldInterpretationBox');
+  const start=computeCycleStartInfertile(demo);
+  const end=computeInfertileAfterOvulation(demo);
+  let h='';
+  h+=`<p style="margin:4px 0;"><b>Begin cyclus:</b> ${start.rule} — ${start.note? start.note : 'onvruchtbaar t/m dag '+start.lastSafeDay+'.'}</p>`;
+  if(end.rise) h+=`<p style="margin:4px 0;"><b>Temperatuurstijging:</b> bevestigd op dag ${end.rise.closedAt+1}${end.rise.exception1?' (uitz.regel 1)':''}. Hulplijn ${end.rise.hulplijn.toFixed(2)}°C.</p>`;
+  if(end.peak) h+=`<p style="margin:4px 0;"><b>Piekdag:</b> dag ${end.peak.index+1} → P+3 = avond dag ${end.peak.index+4}.</p>`;
+  if(end.combined!==null)
+    h+=`<p style="margin:6px 0;"><b style="color:var(--sage-dark);">Onvruchtbaar vanaf avond dag ${end.combined+1}</b> (${end.basis}).</p>`;
+  box.innerHTML=h;
+
+  buildKaartInto('voorbeeldKaartOuter', demo);
+}
 document.getElementById('wipeBtn').addEventListener('click', async ()=>{
   DATA={ cycles:[] };
   startNewCycle(todayISO());
