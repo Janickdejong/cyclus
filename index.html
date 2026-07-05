@@ -60,14 +60,21 @@
   .card h2{margin:0 0 11px; font-size:1.08rem; color:var(--plum-dark);
     font-family:'Fraunces',Georgia,serif; font-weight:600; letter-spacing:0.2px;}
   label{display:block; font-size:0.76rem; color:var(--text-soft); margin:10px 0 4px; font-weight:600;}
-  input,select,textarea{width:100%; padding:9px 10px; border-radius:10px;
-    border:1px solid var(--line); background:var(--input-bg); color:var(--text); font-size:0.95rem; font-family:inherit;}
+  input,select,textarea{width:100%; padding:11px 12px; border-radius:12px;
+    border:1px solid var(--line); background:var(--input-bg); color:var(--text); font-size:0.95rem; font-family:inherit;
+    transition:border-color .15s, box-shadow .15s;}
+  input:focus,select:focus,textarea:focus{outline:none; border-color:var(--rose);
+    box-shadow:0 0 0 3px rgba(201,123,132,0.13);}
   textarea{resize:vertical; min-height:40px;}
   .row{display:flex; gap:10px;} .row>div{flex:1;}
   .chip-row{display:flex; gap:7px; flex-wrap:wrap; margin-top:3px;}
-  .chip{padding:8px 12px; border-radius:20px; border:1px solid var(--line);
-    background:var(--input-bg); color:var(--text); font-size:0.8rem; cursor:pointer; user-select:none;}
-  .chip.sel{background:var(--rose); color:#fff; border-color:var(--rose);}
+  .chip{padding:8px 13px; border-radius:20px; border:1px solid var(--line);
+    background:var(--input-bg); color:var(--text); font-size:0.8rem; cursor:pointer; user-select:none;
+    transition:background .12s, border-color .12s;}
+  .chip.sel{background:var(--rose); color:#fff; border-color:var(--rose); font-weight:600;}
+  .form-sec{font-size:0.82rem; font-weight:700; color:var(--plum-dark); margin:20px 0 8px;
+    padding-top:14px; border-top:1px solid var(--line); letter-spacing:0.2px;}
+  .form-sec:first-of-type{border-top:none; padding-top:0; margin-top:16px;}
   button.primary{width:100%; margin-top:14px; padding:14px; border:none; border-radius:14px;
     background:linear-gradient(135deg,var(--plum),var(--plum-dark)); color:#fff;
     font-size:0.95rem; font-weight:600; cursor:pointer; letter-spacing:0.3px;
@@ -926,19 +933,7 @@ function renderVandaag(editIdx=null){
     const status = computeStatus(cycle);
     document.getElementById('headerSub').textContent = `Cyclus ${cycle.nummer} · dag ${cycle.days.length}`;
     const pred = computePrediction();
-    let predHtml='';
-    if(pred){
-      predHtml=`<div class="card" style="border-left:4px solid var(--rose);">
-        <h2>&#128302; Verwachting <span class="muted" style="font-weight:400;">(indicatie)</span></h2>
-        <p style="font-size:0.86rem; margin:4px 0;">Verwachte start volgende menstruatie:
-          <b>${fmtDateLong(pred.nextMenstru)}</b></p>
-        ${pred.fertileStart?`<p style="font-size:0.86rem; margin:4px 0;">Verwacht vruchtbaar venster:
-          <b>${fmtDate(pred.fertileStart)} – ${fmtDate(pred.fertileEnd)}</b></p>`:''}
-        <p class="muted" style="font-size:0.76rem; margin-top:8px;">Gebaseerd op ${pred.count}
-          eerdere ${pred.count===1?'cyclus':'cycli'} (gem. ${pred.avgLen} dagen${pred.avgRise?`, eisprong ~dag ${pred.avgRise}`:''}).</p>
-        <div class="warn" style="margin:8px 0 0;">Schatting — dagelijkse waarneming blijft leidend.</div>
-      </div>`;
-    }
+    const predHtml = predictionCardHtml(pred);
     const d=cycle.days[todayIdx];
     document.getElementById('tab-vandaag').innerHTML=`
     ${greetingCardHtml(cycle)}
@@ -966,22 +961,7 @@ function renderVandaag(editIdx=null){
 
   const el=document.getElementById('tab-vandaag');
   const pred = editing? null : computePrediction();
-  let predHtml='';
-  if(pred){
-    predHtml = `
-    <div class="card" style="border-left:4px solid var(--rose);">
-      <h2>&#128302; Verwachting <span class="muted" style="font-weight:400;">(indicatie)</span></h2>
-      <p style="font-size:0.86rem; margin:4px 0;">Verwachte start volgende menstruatie:
-        <b>${fmtDateLong(pred.nextMenstru)}</b></p>
-      ${pred.fertileStart? `<p style="font-size:0.86rem; margin:4px 0;">Verwacht vruchtbaar venster:
-        <b>${fmtDate(pred.fertileStart)} – ${fmtDate(pred.fertileEnd)}</b></p>`
-        : `<p class="muted" style="font-size:0.82rem;">Nog te weinig temperatuurdata voor een venster-indicatie.</p>`}
-      <p class="muted" style="font-size:0.76rem; margin-top:8px;">Gebaseerd op het gemiddelde van ${pred.count}
-        eerdere ${pred.count===1?'cyclus':'cycli'} (gem. lengte ${pred.avgLen} dagen${pred.avgRise?`, eisprong ~dag ${pred.avgRise}`:''}).</p>
-      <div class="warn" style="margin:8px 0 0;">Dit is enkel een schatting vooraf om te plánnen — <b>niet</b> betrouwbaar
-        als anticonceptie. Wat je vandaag waarneemt (temperatuur, slijm) en de dubbele controle blijven altijd leidend.</div>
-    </div>`;
-  }
+  const predHtml = predictionCardHtml(pred);
   el.innerHTML = `
   ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:13px 16px;">
     <span style="font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.08rem; font-weight:600;">Dag invullen</span>
@@ -997,6 +977,8 @@ function renderVandaag(editIdx=null){
     <h2>${editing? 'Dag '+dayNum+' bewerken' : (bare? 'Gegevens' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren')}</h2>
     <label>Datum</label>
     <input type="date" id="f_date" value="${suggestedDate}">
+
+    <div class="form-sec">🌡️ Temperatuur</div>
     <div class="row">
       <div><label>Temperatuur (°C)</label>
         <input type="number" step="0.01" min="35" max="39" id="f_temp"
@@ -1009,23 +991,27 @@ function renderVandaag(editIdx=null){
       <label class="switch"><input type="checkbox" id="f_gestoord" ${day&&day.gestoord?'checked':''}>
       <span class="slider"></span></label>
     </div>
-    <label>Bloeding</label>
+
+    <div class="form-sec">🩸 Bloeding</div>
     <div class="chip-row" id="f_bloeding">
       <div class="chip" data-v="">geen</div><div class="chip" data-v="licht">licht/spotting</div>
       <div class="chip" data-v="normaal">normaal</div><div class="chip" data-v="sterk">sterk</div>
     </div>
-    <label>Cervixslijm — ervaren / voelen</label>
+
+    <div class="form-sec">💧 Cervixslijm</div>
+    <label>Ervaren / voelen</label>
     <select id="f_ervaren">
       ${ERVAREN_OPTIES.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
     </select>
-    <label>Cervixslijm — uiterlijk</label>
+    <label>Uiterlijk</label>
     <select id="f_uiterlijk_sel">
       ${UITERLIJK_OPTIES.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
     </select>
     <div id="f_afkorting_preview" style="margin-top:6px; font-size:0.82rem; color:var(--plum-dark); font-weight:600;"></div>
     <label>Extra omschrijving <span class="muted">(optioneel, vrije notitie)</span></label>
     <input type="text" id="f_uiterlijk" placeholder="bv. een beetje taal-elastisch, met witte draadjes" value="${day&&day.uiterlijk?day.uiterlijk:''}">
-    <label>Baarmoederhals <span class="muted">(optioneel)</span></label>
+
+    <div class="form-sec">🌿 Baarmoederhals <span class="muted" style="font-weight:400;">(optioneel)</span></div>
     <div class="chip-row" id="f_bmopen">
       <div class="chip" data-v="gesloten">gesloten •</div>
       <div class="chip" data-v="deels">deels open ○</div>
@@ -1034,7 +1020,8 @@ function renderVandaag(editIdx=null){
     <div class="chip-row" id="f_bmhard" style="margin-top:6px;">
       <div class="chip" data-v="hard">hard</div><div class="chip" data-v="zacht">zacht</div>
     </div>
-    <label>Overig</label>
+
+    <div class="form-sec">✨ Overig</div>
     <div class="chip-row" id="f_extra">
       <div class="chip" data-v="O">O ovulatiepijn</div><div class="chip" data-v="B">B borstsymptoom</div>
       <div class="chip" data-v="X">X gemeenschap</div>
@@ -1594,6 +1581,25 @@ function phaseDescription(cycle){
     return `Je bent in de onvruchtbare fase aan het begin van je cyclus (dag ${n}). Let op: zodra er slijm of vocht komt, wordt het vruchtbaar.`;
   return `Je bevindt je in de vruchtbare fase (dag ${n}). Dit is de tijd rond de eisprong — let goed op je cervixslijm en temperatuur.`;
 }
+function predictionCardHtml(pred){
+  if(!pred) return '';
+  return `<div class="card">
+    <h2>Verwachting <span class="muted" style="font-weight:400; font-size:0.8rem;">indicatie</span></h2>
+    <div style="display:flex; align-items:center; gap:10px; padding:6px 0;">
+      <span style="font-size:1.1rem;">🩸</span>
+      <div style="font-size:0.85rem;">Volgende menstruatie<br><b style="color:var(--plum-dark);">${fmtDateLong(pred.nextMenstru)}</b></div>
+    </div>
+    ${pred.fertileStart?`<div style="display:flex; align-items:center; gap:10px; padding:6px 0; border-top:1px solid var(--line);">
+      <span style="font-size:1.1rem;">🌸</span>
+      <div style="font-size:0.85rem;">Vruchtbaar venster<br><b style="color:var(--plum-dark);">${fmtDate(pred.fertileStart)} – ${fmtDate(pred.fertileEnd)}</b></div>
+    </div>`:''}
+    <p class="muted" style="font-size:0.74rem; margin-top:10px; line-height:1.5;">
+      Schatting op basis van ${pred.count} eerdere ${pred.count===1?'cyclus':'cycli'}
+      (gem. ${pred.avgLen} dagen${pred.avgRise?`, eisprong ~dag ${pred.avgRise}`:''}).
+      Je dagelijkse waarneming blijft altijd leidend.</p>
+  </div>`;
+}
+
 function greetingCardHtml(cycle){
   const v=verseOfToday();
   const status=computeStatus(cycle);
