@@ -180,7 +180,6 @@
   <button data-tab="kaart">Kaart</button>
   <button data-tab="agenda">Agenda</button>
   <button data-tab="cycli">Cycli</button>
-  <button data-tab="voorbeeld">Voorbeeld</button>
   <button data-tab="info">Uitleg</button>
 </nav>
 
@@ -231,6 +230,7 @@
     <h2>&#129514; Voorbeeldcyclus</h2>
     <p class="note" style="font-size:0.84rem;">Dit is een voorbeeld ter uitleg &mdash; het staat los van jouw eigen
     gegevens. Zo ziet een volle kaart eruit met een stijging, een piekdag en de vruchtbare dagen.</p>
+    <button class="secondary" id="backToInfoBtn">&larr; Terug naar Uitleg</button>
   </div>
   <div class="card">
     <h2 id="voorbeeldTitle">Cycluskaart</h2>
@@ -255,8 +255,8 @@
   <div class="card">
     <h2>&#129514; Voorbeeld bekijken</h2>
     <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet (met stijging, piekdag en
-    vruchtbare dagen)? Kijk in het tabblad "Voorbeeld" &mdash; dat staat helemaal los van jouw eigen gegevens.</p>
-    <button class="secondary danger" id="wipeBtn" style="border-color:var(--danger); color:var(--danger);">Alles wissen &amp; opnieuw beginnen</button>
+    vruchtbare dagen)? Dat staat helemaal los van jouw eigen gegevens.</p>
+    <button class="secondary" id="showVoorbeeldBtn">Voorbeeld bekijken</button>
   </div>
   <div class="card"><h2>Gestoorde metingen</h2>
     <p class="note" style="font-size:0.84rem;">Zet de schakelaar "meting gestoord" aan bij een gebroken nacht,
@@ -1183,12 +1183,12 @@ function renderVoorbeeld(){
 
   buildKaartInto('voorbeeldKaartOuter', demo);
 }
-document.getElementById('wipeBtn').addEventListener('click', async ()=>{
-  DATA={ cycles:[] };
-  startNewCycle(todayISO());
-  await saveData();
-  goTab('vandaag');
+document.getElementById('showVoorbeeldBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-voorbeeld').classList.add('active');
+  renderVoorbeeld();
 });
+document.getElementById('backToInfoBtn').addEventListener('click', ()=>goTab('info'));
 
 /* ---- Authenticatie ---- */
 let authMode = 'login'; // of 'signup'
