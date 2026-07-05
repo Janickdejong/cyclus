@@ -157,6 +157,9 @@
   body.dark .mday.onvrucht{background:#2F4536; color:#A8C9B0;}
   .mday.pred{border:1.5px dashed var(--rose); background:transparent; color:var(--rose);}
   .mday.today{outline:2px solid var(--plum-dark); outline-offset:1px;}
+  .mday{position:relative;}
+  .sex-dot{position:absolute; bottom:1px; right:2px; font-size:0.5rem; color:#C0392B; line-height:1;}
+  body.dark .sex-dot{color:#FF8080;}
   .aleg{width:11px; height:11px; border-radius:4px; display:inline-block; vertical-align:-1px; margin-right:3px;}
   .bloed-dot{background:#C05C6B;} .fert-dot{background:#F3C9CF;}
   .onvr-dot{background:#DCE9DE;} .pred-dot{border:1.5px dashed var(--rose);}
@@ -266,6 +269,22 @@
   </div>
 </div>
 
+<!-- Gemeenschap popup -->
+<div id="sexPopup" style="display:none; position:fixed; inset:0; z-index:70;
+  background:rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:18px; padding:22px 20px; width:100%; max-width:340px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2); text-align:center;">
+    <div style="font-size:1.8rem; margin-bottom:6px;">♥</div>
+    <h2 id="sexPopupDate" style="margin:0 0 6px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
+    <p style="font-size:0.9rem; color:var(--text); margin:0 0 18px;">Gemeenschap gehad op deze dag?</p>
+    <div style="display:flex; gap:10px;">
+      <button class="primary" id="sexYes" style="margin:0; flex:1;">Ja</button>
+      <button class="secondary" id="sexNo" style="margin:0; flex:1;">Nee</button>
+    </div>
+    <button class="secondary" id="sexCancel" style="margin-top:8px;">Annuleren</button>
+  </div>
+</div>
+
 <nav>
   <button data-tab="vandaag" class="active">Vandaag</button>
   <button data-tab="kaart">Kaart</button>
@@ -323,6 +342,7 @@
       <span><span class="aleg fert-dot"></span> vruchtbaar</span>
       <span><span class="aleg onvr-dot"></span> onvruchtbaar</span>
       <span><span class="aleg pred-dot"></span> verwacht</span>
+      <span><span style="color:#C0392B; margin-right:3px;">♥</span> gemeenschap</span>
     </div>
     <div id="agendaMonths"></div>
   </div>
@@ -484,11 +504,6 @@
     Bij onregelmatige cycli of uitblijvende temperatuurstijgingen: alleen het cervixslijm gebruiken.
     Droog/niets = onvruchtbaar; zodra vocht of slijm optreedt = vruchtbaar, t/m de avond van de
     4e dag na de piekdag. De app geeft dan aan dat de dubbele controle niet volledig is.</p>
-  </div>
-
-  <div class="card">
-    <h2>🔔 Instellingen</h2>
-    <div id="reminderSettingsBox"></div>
   </div>
 
   <div class="card">
@@ -810,18 +825,17 @@ document.querySelectorAll('nav button').forEach(btn=>{
       if(btn.dataset.tab==='agenda') renderAgenda();
       if(btn.dataset.tab==='voorbeeld') renderVoorbeeld();
       if(btn.dataset.tab==='cycli') renderCycleList();
-      if(btn.dataset.tab==='info') renderReminderSettings();
     }catch(e){ console.error('Render error:',e); alert('Fout bij tonen: '+e.message); }
   });
 });
 function goTab(name){ document.querySelector(`nav button[data-tab=${name}]`).click(); }
 document.getElementById('fabAdd').addEventListener('click',()=>{
-  // forceer een leeg invoerformulier voor een nieuwe dag
+  // forceer een kaal, leeg invoerformulier voor een (oude) dag — zonder begroeting
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
   document.querySelector('nav button[data-tab=vandaag]').classList.add('active');
   document.getElementById('tab-vandaag').classList.add('active');
-  renderVandaag('new'); // 'new' = altijd leeg formulier
+  renderVandaag('bare'); // kaal formulier, geen begroeting
 });
 document.getElementById('newCycleBtn').addEventListener('click', async ()=>{
   const afgerondeCyclus = currentCycle();
@@ -835,7 +849,8 @@ document.getElementById('newCycleBtn').addEventListener('click', async ()=>{
 /* ---- Vandaag: status + invoer ---- */
 function renderVandaag(editIdx=null){
   const cycle=currentCycle();
-  const forceNew = editIdx==='new';
+  const forceNew = editIdx==='new' || editIdx==='bare';
+  const bare = editIdx==='bare'; // kaal formulier zonder begroeting
   if(forceNew) editIdx=null;
   const editing = editIdx!==null;
   const day = editing? cycle.days[editIdx] : null;
@@ -911,14 +926,14 @@ function renderVandaag(editIdx=null){
     </div>`;
   }
   el.innerHTML = `
-  ${!editing? greetingCardHtml(cycle) : ''}
-  <div class="status-hero ${status.cls}">
+  ${bare? '' : (!editing? greetingCardHtml(cycle) : '')}
+  ${bare? '' : `<div class="status-hero ${status.cls}">
     <div class="big">${status.label}</div>
     <div class="why">${status.why}</div>
-  </div>
-  ${predHtml}
+  </div>`}
+  ${bare? '' : predHtml}
   <div class="card">
-    <h2>${editing? 'Dag '+dayNum+' bewerken' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren'}</h2>
+    <h2>${editing? 'Dag '+dayNum+' bewerken' : (bare? 'Dag invullen' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren')}</h2>
     <label>Datum</label>
     <input type="date" id="f_date" value="${suggestedDate}">
     <div class="row">
@@ -1498,10 +1513,12 @@ function buildDayStatusMap(){
   // map 'YYYY-MM-DD' -> 'bloeding' | 'vrucht' | 'onvrucht'
   const map={};
   const special=isSpecialMode();
+  const sexDays=new Set(); // dagen met gemeenschap
   for(const c of DATA.cycles){
     const start=computeCycleStartInfertile(c);
     const end=computeInfertileAfterOvulation(c);
     c.days.forEach((d,i)=>{
+      if(d.extra && d.extra.includes('X')) sexDays.add(d.date);
       if(special){
         // bijzondere fase: geen vruchtbaar/onvruchtbaar-inkleuring, alleen bloeding
         if(d.bloeding) map[d.date]='bloeding';
@@ -1514,6 +1531,7 @@ function buildDayStatusMap(){
       map[d.date]=st;
     });
   }
+  window._sexDays=sexDays; // beschikbaar voor renderAgenda
   if(special) return map; // geen voorspelling in bijzondere modus
   // voorspelling: verwachte volgende menstruatie + vruchtbaar venster als 'pred'
   const pred=computePrediction();
@@ -1553,12 +1571,62 @@ function renderAgenda(){
       const iso=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
       const st=map[iso]||'';
       const isToday=iso===today?' today':'';
-      html+=`<div class="mday ${st}${isToday}">${d}</div>`;
+      const hasSex=(window._sexDays&&window._sexDays.has(iso));
+      const sexMark=hasSex?`<span class="sex-dot">♥</span>`:'';
+      html+=`<div class="mday ${st}${isToday}" data-datum="${iso}" style="cursor:pointer;">${d}${sexMark}</div>`;
     }
     html+=`</div></div>`;
   }
   el.innerHTML=html;
+  // dagen klikbaar → gemeenschap-popup
+  el.querySelectorAll('.mday[data-datum]').forEach(cell=>{
+    cell.addEventListener('click',()=>openSexPopup(cell.dataset.datum));
+  });
 }
+
+/* ---- Gemeenschap-popup ---- */
+let _sexPopupDate=null;
+function openSexPopup(iso){
+  _sexPopupDate=iso;
+  const d=new Date(iso+'T00:00:00');
+  document.getElementById('sexPopupDate').textContent=
+    d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
+  // Ja/Nee-knoppen kleuren op basis van huidige staat
+  const has=(window._sexDays&&window._sexDays.has(iso));
+  document.getElementById('sexPopup').style.display='flex';
+}
+async function setSexForDate(iso, value){
+  // zoek de dag in de cycli; zit hij er al?
+  let found=null, foundCycle=null;
+  for(const c of DATA.cycles){
+    const d=c.days.find(x=>x.date===iso);
+    if(d){ found=d; foundCycle=c; break; }
+  }
+  if(found){
+    // pas het extra-veld aan
+    let extras=new Set((found.extra||'').split(',').filter(Boolean));
+    if(value) extras.add('X'); else extras.delete('X');
+    found.extra=[...extras].join(',');
+  } else if(value){
+    // dag bestaat nog niet → voeg een minimale dag toe aan de huidige cyclus
+    const c=currentCycle();
+    c.days.push({ date:iso, temp:null, meettijd:null, gestoord:false, bloeding:'',
+      cervixAfk:null, uiterlijk:'', bmOpening:null, bmStevigheid:null, extra:'X', note:'' });
+    c.days.sort((a,b)=>a.date<b.date?-1:1); // op datum sorteren
+  }
+  await saveData();
+  document.getElementById('sexPopup').style.display='none';
+  renderAgenda();
+}
+document.getElementById('sexYes').addEventListener('click',()=>setSexForDate(_sexPopupDate,true));
+document.getElementById('sexNo').addEventListener('click',()=>setSexForDate(_sexPopupDate,false));
+document.getElementById('sexCancel').addEventListener('click',()=>{
+  document.getElementById('sexPopup').style.display='none';
+});
+document.getElementById('sexPopup').addEventListener('click',(e)=>{
+  if(e.target===document.getElementById('sexPopup'))
+    document.getElementById('sexPopup').style.display='none';
+});
 
 /* ---- PDF-export van de kaart ---- */
 function drawExportCanvas(cycle){
