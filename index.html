@@ -241,38 +241,146 @@
 
 <section id="tab-info">
   <div class="card">
-    <h2>Hoe werkt dit?</h2>
-    <p class="note" style="font-size:0.84rem;">Deze app volgt de Sensiplan&reg;-regels: temperatuur, cervixslijm
-    en (optioneel) baarmoederhals, altijd in dubbele controle.</p>
-    <p class="note" style="font-size:0.84rem;"><b>Automatisch:</b> hulplijn &amp; temperatuurstijging
-    (incl. uitzonderingsregel 1, gestoorde metingen uitgesloten), cervixslijmpiekdag (P-1-2-3),
-    baarmoederhals-controle, einde vruchtbare fase (dubbele controle), begin-cyclusregels
-    (5-dagen-regel / min-8-regel over de laatste 12 cycli).</p>
-    <div class="warn"><b>Grenzen:</b> uitzonderingsregel 2 en de min-20-regel zijn niet automatisch.
-    De regels voor borstvoeding, overgangsjaren en na de pil staan hieronder als achtergrond maar worden
-    niet berekend. De app vervangt geen Sensiplan-cursus of medisch advies.</div>
+    <h2>Wat is Sensiplan?</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Sensiplan is een symptothermale methode voor natuurlijke gezinsplanning. Je leert je eigen
+    vruchtbaarheidssignalen herkennen door elke dag twee dingen bij te houden:
+    je <b>ochtendtemperatuur</b> en je <b>cervixslijm</b>. Samen vormen ze een betrouwbare
+    "dubbele controle" — pas als beide tekenen overeenkomen, is de vruchtbare fase echt voorbij.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De methode werkt in twee richtingen: je kunt hem gebruiken om een <b>zwangerschap te vermijden</b>
+    of juist om de kans erop te <b>vergroten</b>. In beide gevallen geldt: hoe nauwkeuriger je meet
+    en noteert, hoe betrouwbaarder de uitkomst.</p>
+    <div class="warn">De app volgt de Sensiplan®-regels automatisch, maar vervangt geen cursus of
+    medisch advies. Twijfel je? Raadpleeg een gecertificeerd Sensiplan-consulent.</div>
   </div>
+
   <div class="card">
-    <h2>&#129514; Voorbeeld bekijken</h2>
-    <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet (met stijging, piekdag en
-    vruchtbare dagen)? Dat staat helemaal los van jouw eigen gegevens.</p>
+    <h2>🌡️ De ochtendtemperatuur</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Wanneer meten?</b> Elke ochtend direct na het wakker worden, vóór je opstaat of iets doet.
+    Na minstens 3 uur aaneengesloten slaap. Altijd op hetzelfde moment en op dezelfde manier
+    (rectaal, vaginaal of oraal — kies één manier en houd dat aan).</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Wat zie je?</b> In de eerste helft van de cyclus (vóór de eisprong) ligt de temperatuur laag.
+    Na de eisprong stijgt hij — en blijft hoog. Die stijging is het bewijs dat de eisprong heeft
+    plaatsgevonden.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>De stijgingsregel:</b> de app berekent elke dag een "hulplijn" — het maximum van de
+    6 voorafgaande geldige metingen. Een stijging is bevestigd als er 3 opeenvolgende metingen
+    <i>boven</i> de hulplijn staan, waarbij de 3e meting minstens 0,2°C boven de hulplijn ligt.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Gestoorde meting?</b> Zet de schakelaar "meting gestoord" aan bij een gebroken nacht,
+    laat wakker worden, alcohol, ziekte of koorts. De meting blijft zichtbaar op de kaart
+    (open ringetje) maar telt niet mee voor de berekening.</p>
+  </div>
+
+  <div class="card">
+    <h2>💧 Cervixslijm</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Cervixslijm verandert tijdens de cyclus. Leer het dagelijks observeren — wat voel je bij de
+    schaamlippen, en wat zie je eventueel? Noteer <i>avonds</i> de beste kwaliteit van die dag.</p>
+    <div style="overflow-x:auto; margin:8px 0;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <tr style="background:var(--rowlabel);">
+        <th style="padding:6px 8px; text-align:left; border:1px solid var(--line);">Afkorting</th>
+        <th style="padding:6px 8px; text-align:left; border:1px solid var(--line);">Gevoel</th>
+        <th style="padding:6px 8px; text-align:left; border:1px solid var(--line);">Uiterlijk</th>
+      </tr>
+      <tr><td style="padding:5px 8px; border:1px solid var(--line);"><b>d</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">droog, ruw, jeukend</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gezien</td></tr>
+      <tr style="background:var(--input-bg);"><td style="padding:5px 8px; border:1px solid var(--line);"><b>Ø</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gevoeld</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gezien</td></tr>
+      <tr><td style="padding:5px 8px; border:1px solid var(--line);"><b>v</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">vochtig gevoeld</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">niets gezien</td></tr>
+      <tr style="background:var(--input-bg);"><td style="padding:5px 8px; border:1px solid var(--line);"><b>S</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">vochtig of niets</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">dik, wit, troebel, romig, klonterig, kleverig</td></tr>
+      <tr><td style="padding:5px 8px; border:1px solid var(--line);"><b>S+</b></td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">nat, glibberig, glad</td>
+        <td style="padding:5px 8px; border:1px solid var(--line);">helder, glashelder, rekbaar, als rauw eiwit, draadjes trekkend</td></tr>
+    </table></div>
+    <p class="note" style="font-size:0.84rem; line-height:1.65; margin-top:8px;">
+    <b>Piekdag (P):</b> de laatste dag met de beste kwaliteit slijm (hoogste categorie). Daarna
+    nummert de app automatisch: P → 1 → 2 → 3. Op de avond van dag 3 na P is het
+    cervixslijm-symptoom afgesloten.</p>
+  </div>
+
+  <div class="card">
+    <h2>🔄 De dubbele controle</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De vruchtbare fase is pas echt voorbij als <b>zowel</b> de temperatuurstijging <b>als</b> de
+    piekdag-telling zijn afgesloten — en dan geldt: wat het <b>laatste</b> komt, bepaalt het einde.
+    Dat is de dubbele controle: twee onafhankelijke tekenen bevestigen samen dat de eisprong
+    geweest is en de vruchtbaarheid voorbij is.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Voorbeeld:</b> temperatuurstijging bevestigd op dag 18, piekdag+3 pas op dag 20 →
+    onvruchtbaar vanaf avond dag 20.</p>
+  </div>
+
+  <div class="card">
+    <h2>📅 Begin van de cyclus</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Aan het begin van de cyclus (na de menstruatie) kan er ook een korte onvruchtbare periode zijn,
+    maar die wordt strenger beoordeeld — altijd in dubbele controle met het cervixslijm.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Cyclus 1:</b> vanaf het begin vruchtbaar aannemen — er is nog geen voorgeschiedenis.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Cycli 2–12:</b> 5-dagen-regel — de eerste 5 dagen zijn onvruchtbaar, maar alléén als de
+    vorige cyclus een interpreteerbare temperatuurstijging had. Zodra cervixslijm of vocht optreedt:
+    meteen vruchtbaar.</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>Cyclus 13 en verder:</b> min-8-regel — de vroegste 1e hogere meting uit de laatste 12 cycli
+    minus 8 = laatste onvruchtbare dag. In dubbele controle met cervixslijm.</p>
+  </div>
+
+  <div class="card">
+    <h2>🌿 Baarmoederhals (optioneel)</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De baarmoederhals kun je gebruiken als alternatieve dubbele controle naast het cervixslijm.
+    Je voelt eenmaal per dag (zittend, altijd op dezelfde manier): stevigheid (hard/zacht),
+    ligging (laag/hoog) en opening (gesloten •/deels open ○/helemaal open ◯).</p>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Rond de eisprong: zacht, open, hoog. Na de eisprong: hard, gesloten, lager. Drie opeenvolgende
+    dagen gesloten + hard bevestigt (in dubbele controle met de temperatuur) dat de vruchtbare fase
+    voorbij is.</p>
+  </div>
+
+  <div class="card">
+    <h2>👶 Kinderwens</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    De grootste kans op zwangerschap: de dagen met S+ slijm en de dag van de eerste hogere
+    temperatuurmeting, plus dagen met ovulatiepijn of een zachte/open/hoge baarmoederhals.
+    Bij ~60% van de paren lukt het binnen 6 maanden. Sensiplan helpt je ook bij een
+    langere weg naar zwangerschap — je cyclusdata zijn waardevol voor een arts.</p>
+  </div>
+
+  <div class="card">
+    <h2>🤱 Borstvoeding</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    <b>LAM (Lactatie Amenorroe Methode)</b> geldt zolang: je geeft volledige borstvoeding +
+    kind is jonger dan 6 maanden + er is nog geen bloeding na de bevalling. Dan is vruchtbaarheid
+    vrijwel uitgesloten. Zodra één van deze drie wegvalt: gelden de gewone Sensiplan-regels
+    (waarbij de eerste hogere meting extra hoog moet zijn voor de dubbele controle).</p>
+  </div>
+
+  <div class="card">
+    <h2>🌸 Overgangsjaren</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Bij onregelmatige cycli of uitblijvende temperatuurstijgingen: alleen het cervixslijm gebruiken.
+    Droog/niets = onvruchtbaar; zodra vocht of slijm optreedt = vruchtbaar, t/m de avond van de
+    4e dag na de piekdag. De app geeft dan aan dat de dubbele controle niet volledig is.</p>
+  </div>
+
+  <div class="card">
+    <h2>🧪 Voorbeeld bekijken</h2>
+    <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet? Laad twee
+    complete voorbeeldcycli — helemaal los van je eigen gegevens.</p>
     <button class="secondary" id="showVoorbeeldBtn">Voorbeeld bekijken</button>
   </div>
-  <div class="card"><h2>Gestoorde metingen</h2>
-    <p class="note" style="font-size:0.84rem;">Zet de schakelaar "meting gestoord" aan bij een gebroken nacht,
-    laat slapen, alcohol, ziekte, ander meetmoment, enz. De temperatuur wordt dan tussen haakjes gezet en telt
-    niet mee voor de hulplijn of de stijging &mdash; precies zoals op de papieren kaart.</p></div>
-  <div class="card"><h2>Kinderwens</h2>
-    <p class="note" style="font-size:0.84rem;">Grootste kans: dagen met de beste slijmkwaliteit (S+) t/m de dag
-    van de eerste hogere meting, dagen met open/zachte/hoge baarmoederhals, en dagen met ovulatiepijn.
-    Bij ~60% van de paren lukt het binnen 6 maanden.</p></div>
-  <div class="card"><h2>Borstvoeding (LAM)</h2>
-    <p class="note" style="font-size:0.84rem;">Volledige borstvoeding + kind &lt; 6 mnd + nog geen bloeding =
-    vruchtbaarheid vrijwel uitgesloten. Daarna: droog/niets = onvruchtbaar; zodra vocht of slijm optreedt
-    vruchtbaar, tot de interpretatie in dubbele controle sluit (extra hogere meting vereist).</p></div>
-  <div class="card"><h2>Overgangsjaren</h2>
-    <p class="note" style="font-size:0.84rem;">Bij uitblijvende stijgingen: alleen cervixslijm-interpretatie.
-    Droog/niets = onvruchtbaar; vocht of slijm = vruchtbaar t/m de avond van de 4e dag na de piekdag.</p></div>
 </section>
 </main>
 
@@ -710,7 +818,7 @@ function buildKaartInto(targetId, cycle){
             break;
           case 'extra': content=(d.extra||'').replaceAll(',',' '); break;
           case 'vrucht':
-            const st=dayFertility(i,start,end);
+            const st=dayFertility(i,start,end,d);
             if(st==='v'){ content='v'; cls+=' vrucht-v'; }
             else if(st==='v/'){ content='v/'; cls+=' vrucht-v'; }
             break;
@@ -808,7 +916,9 @@ function ervarenText(d){
   if(!d.cervixAfk) return '';
   return {'d':'droog','Ø':'niets','v':'vochtig','S':'vochtig','S+':'nat/vochtig'}[d.cervixAfk]||'';
 }
-function dayFertility(i,start,end){
+function dayFertility(i,start,end,day){
+  // bloedingsdagen zijn nooit vruchtbaar in de kaart-markering
+  if(day && day.bloeding) return '';
   if(end.combined!==null){
     if(i===end.combined) return 'v/';
     if(i>end.combined) return '';
@@ -885,7 +995,7 @@ function buildDayStatusMap(){
     const end=computeInfertileAfterOvulation(c);
     c.days.forEach((d,i)=>{
       let st='onvrucht';
-      const f=dayFertility(i,start,end);
+      const f=dayFertility(i,start,end,d);
       if(f==='v'||f==='v/') st='vrucht';
       if(d.bloeding) st='bloeding';
       map[d.date]=st;
@@ -1041,7 +1151,7 @@ function drawExportCanvas(cycle){
             ctx.fillText(sym+(d.bmStevigheid?(d.bmStevigheid==='hard'?'h':'z'):''),cx,cy); }
           break;
         case 'extra': if(d.extra) ctx.fillText(d.extra.replaceAll(',',' '),cx,cy); break;
-        case 'vrucht': { const f=dayFertility(i,start,end);
+        case 'vrucht': { const f=dayFertility(i,start,end,d);
           if(f){ ctx.fillStyle='#B85C5C'; ctx.font='bold 9px sans-serif'; ctx.fillText(f,cx,cy); } }
           break;
       }
