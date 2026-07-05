@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyclus &middot; Sensiplan</title>
+<title>Cyclus · Sensiplan</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cyclus">
+<meta name="theme-color" content="#5B3A4B">
+<link rel="manifest" id="pwaManifest">
+<link rel="apple-touch-icon" id="appleTouchIcon">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Cyclus%20%C2%B7%20Sensiplan%22%2C%22short_name%22%3A%22Cyclus%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FBF6F1%22%2C%22theme_color%22%3A%22%235B3A4B%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%25270%25200%2520100%2520100%2527%253E%253Ccircle%2520cx%3D%252750%2527%2520cy%3D%252750%2527%2520r%3D%252750%2527%2520fill%3D%2527%25235B3A4B%2527%2F%253E%253Ctext%2520x%3D%252750%2527%2520y%3D%252768%2527%2520font-size%3D%252760%2527%2520text-anchor%3D%2527middle%2527%253E%25F0%259F%258C%25BF%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
@@ -382,6 +390,11 @@
   </div>
 
   <div class="card">
+    <h2>🔔 Instellingen</h2>
+    <div id="reminderSettingsBox"></div>
+  </div>
+
+  <div class="card">
     <h2>🧪 Voorbeeld bekijken</h2>
     <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet? Laad twee
     complete voorbeeldcycli — helemaal los van je eigen gegevens.</p>
@@ -393,6 +406,45 @@
 <button class="fab-add" id="fabAdd">+</button>
 
 <script>
+/* ============ PWA: manifest + icoon ============ */
+(function setupPWA(){
+  // Genereer een SVG-icoon (bloem op plum achtergrond) als data-URL
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+    <rect width="512" height="512" rx="110" fill="#5B3A4B"/>
+    <g transform="translate(256,256)">
+      ${[0,45,90,135,180,225,270,315].map(a=>`
+        <ellipse rx="52" ry="90" transform="rotate(${a}) translate(0,-78)"
+          fill="#E8B4BC" opacity="0.88"/>`).join('')}
+      <circle r="58" fill="#C97B84"/>
+      <circle r="34" fill="#FBF6F1"/>
+      <circle r="16" fill="#5B3A4B"/>
+    </g>
+  </svg>`;
+  const iconUrl='data:image/svg+xml;base64,'+btoa(svg);
+
+  // Apple touch icon
+  const appleLink=document.getElementById('appleTouchIcon');
+  if(appleLink) appleLink.href=iconUrl;
+
+  // PWA manifest
+  const manifest={
+    name:'Cyclus — Sensiplan',
+    short_name:'Cyclus',
+    description:'Sensiplan cyclustracker',
+    start_url:'./',
+    display:'standalone',
+    background_color:'#FBF6F1',
+    theme_color:'#5B3A4B',
+    icons:[
+      {src:iconUrl, sizes:'512x512', type:'image/svg+xml', purpose:'any maskable'}
+    ]
+  };
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  const manifestUrl=URL.createObjectURL(blob);
+  const ml=document.getElementById('pwaManifest');
+  if(ml) ml.href=manifestUrl;
+})();
+
 /* ============ Supabase ============ */
 const SUPABASE_URL = 'https://bszbxrsiyrcuuyjuipkk.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzemJ4cnNpeXJjdXV5anVpcGtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxODA2MjQsImV4cCI6MjA5ODc1NjYyNH0.lYi0ChGtBv4eRPQSdu2krk1Xb_WKnL1ANbYjakqumdE';
@@ -653,6 +705,7 @@ document.querySelectorAll('nav button').forEach(btn=>{
       if(btn.dataset.tab==='agenda') renderAgenda();
       if(btn.dataset.tab==='voorbeeld') renderVoorbeeld();
       if(btn.dataset.tab==='cycli') renderCycleList();
+      if(btn.dataset.tab==='info') renderReminderSettings();
     }catch(e){ console.error('Render error:',e); alert('Fout bij tonen: '+e.message); }
   });
 });
@@ -672,6 +725,51 @@ function renderVandaag(editIdx=null){
   const cycle=currentCycle();
   const editing = editIdx!==null;
   const day = editing? cycle.days[editIdx] : null;
+  const today = todayISO();
+
+  // Check: is vandaag al ingevuld?
+  const todayIdx = !editing? cycle.days.findIndex(d=>d.date===today) : -1;
+  const todayAlreadyFilled = todayIdx !== -1;
+
+  // Als vandaag al ingevuld is én niet aan het bewerken: toon status + knop ipv leeg formulier
+  if(todayAlreadyFilled && !editing){
+    const status = computeStatus(cycle);
+    document.getElementById('headerSub').textContent = `Cyclus ${cycle.nummer} · dag ${cycle.days.length}`;
+    const pred = computePrediction();
+    let predHtml='';
+    if(pred){
+      predHtml=`<div class="card" style="border-left:4px solid var(--rose);">
+        <h2>&#128302; Verwachting <span class="muted" style="font-weight:400;">(indicatie)</span></h2>
+        <p style="font-size:0.86rem; margin:4px 0;">Verwachte start volgende menstruatie:
+          <b>${fmtDateLong(pred.nextMenstru)}</b></p>
+        ${pred.fertileStart?`<p style="font-size:0.86rem; margin:4px 0;">Verwacht vruchtbaar venster:
+          <b>${fmtDate(pred.fertileStart)} – ${fmtDate(pred.fertileEnd)}</b></p>`:''}
+        <p class="muted" style="font-size:0.76rem; margin-top:8px;">Gebaseerd op ${pred.count}
+          eerdere ${pred.count===1?'cyclus':'cycli'} (gem. ${pred.avgLen} dagen${pred.avgRise?`, eisprong ~dag ${pred.avgRise}`:''}).</p>
+        <div class="warn" style="margin:8px 0 0;">Schatting — dagelijkse waarneming blijft leidend.</div>
+      </div>`;
+    }
+    const d=cycle.days[todayIdx];
+    document.getElementById('tab-vandaag').innerHTML=`
+    <div class="status-hero ${status.cls}">
+      <div class="big">${status.label}</div>
+      <div class="why">${status.why}</div>
+    </div>
+    ${predHtml}
+    <div class="card">
+      <h2>✅ Vandaag al ingevuld</h2>
+      <p style="font-size:0.85rem; margin:4px 0;">
+        Temperatuur: <b>${d.temp?d.temp+'°C'+(d.gestoord?' (gestoord)':''):'—'}</b> &nbsp;·&nbsp;
+        Slijm: <b>${d.cervixAfk||'—'}</b> &nbsp;·&nbsp;
+        Bloeding: <b>${d.bloeding||'geen'}</b>
+        ${d.note?`<br><span class="muted">${d.note}</span>`:''}
+      </p>
+      <button class="secondary" style="margin-top:10px;" id="editTodayBtn">✏️ Vandaag bewerken</button>
+    </div>`;
+    document.getElementById('editTodayBtn').addEventListener('click',()=>renderVandaag(todayIdx));
+    return;
+  }
+
   const dayNum = editing? editIdx+1 : cycle.days.length+1;
   const suggestedDate = editing? day.date :
     (cycle.days.length? addDays(cycle.days[cycle.days.length-1].date,1) : cycle.startDate);
@@ -1503,8 +1601,122 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 async function startApp(){
   authOverlay.classList.add('hidden');
   await loadData();
-  renderVandaag();
-  goTab('vandaag');
+  // check: is er al een dag ingevoerd voor vandaag?
+  const cycle = currentCycle();
+  const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO());
+  if(vandaagAl){
+    goTab('kaart'); // vandaag al ingevuld → meteen kaart tonen
+  } else {
+    renderVandaag();
+    goTab('vandaag'); // nog niet ingevuld → invoerformulier
+  }
+  // notificatie-herinnnering instellen
+  scheduleDailyReminder();
+}
+
+/* ---- Dagelijkse herinnering ---- */
+function getReminderTime(){
+  return localStorage.getItem('cyclus_reminder_time') || '07:00';
+}
+function setReminderTime(t){
+  localStorage.setItem('cyclus_reminder_time', t);
+}
+function getReminderEnabled(){
+  return localStorage.getItem('cyclus_reminder_on') === '1';
+}
+function setReminderEnabled(v){
+  localStorage.setItem('cyclus_reminder_on', v ? '1' : '0');
+}
+
+async function requestNotificationPermission(){
+  if(!('Notification' in window)) return false;
+  if(Notification.permission === 'granted') return true;
+  if(Notification.permission === 'denied') return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+function scheduleDailyReminder(){
+  // Verwijder eerdere timeout
+  if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
+  if(!getReminderEnabled()) return;
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+
+  const now = new Date();
+  const [h, m] = getReminderTime().split(':').map(Number);
+  const next = new Date(now);
+  next.setHours(h, m, 0, 0);
+  if(next <= now) next.setDate(next.getDate() + 1); // morgen als tijd al voorbij is
+  const ms = next - now;
+
+  window._reminderTimeout = setTimeout(()=>{
+    // Alleen melden als vandaag nog niet ingevuld
+    const cycle = currentCycle();
+    const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO());
+    if(!vandaagAl){
+      new Notification('🌿 Cyclus', {
+        body: 'Vergeet je temperatuur niet te meten!',
+        icon: '',
+        badge: ''
+      });
+    }
+    // Plan voor morgen opnieuw in
+    scheduleDailyReminder();
+  }, ms);
+}
+
+function renderReminderSettings(){
+  const el = document.getElementById('reminderSettingsBox');
+  if(!el) return;
+  const enabled = getReminderEnabled();
+  const time = getReminderTime();
+  const supported = 'Notification' in window;
+  const permission = supported ? Notification.permission : 'unsupported';
+
+  el.innerHTML = `
+    <div class="toggle-row">
+      <span><b>Dagelijkse herinnering</b>
+        <span class="muted" style="display:block; font-size:0.72rem;">
+        ${!supported ? 'Niet ondersteund op dit toestel' :
+          permission === 'denied' ? 'Geblokkeerd — zet notificaties aan in je telefooninstellingen' :
+          'Herinnert je aan het meten als je vandaag nog niet hebt ingevuld'}
+        </span>
+      </span>
+      <label class="switch">
+        <input type="checkbox" id="reminderToggle" ${enabled?'checked':''} ${!supported||permission==='denied'?'disabled':''}>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div id="reminderTimeRow" style="${enabled&&supported?'':'display:none;'}">
+      <label>Tijdstip herinnering</label>
+      <input type="time" id="reminderTime" value="${time}" style="max-width:140px;">
+    </div>`;
+
+  document.getElementById('reminderToggle').addEventListener('change', async (e)=>{
+    if(e.target.checked){
+      const granted = await requestNotificationPermission();
+      if(!granted){
+        e.target.checked = false;
+        alert('Geef de app toestemming voor notificaties in je telefooninstellingen.');
+        return;
+      }
+      setReminderEnabled(true);
+      document.getElementById('reminderTimeRow').style.display='';
+      scheduleDailyReminder();
+    } else {
+      setReminderEnabled(false);
+      document.getElementById('reminderTimeRow').style.display='none';
+      if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
+    }
+    renderReminderSettings();
+  });
+
+  const timeInput = document.getElementById('reminderTime');
+  if(timeInput) timeInput.addEventListener('change', (e)=>{
+    setReminderTime(e.target.value);
+    scheduleDailyReminder();
+  });
 }
 
 /* ---- Init ---- */
