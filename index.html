@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" id="appleTouchIcon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22Cyclus%20%C2%B7%20Sensiplan%22%2C%22short_name%22%3A%22Cyclus%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23FBF6F1%22%2C%22theme_color%22%3A%22%235B3A4B%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%2527http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%2527%2520viewBox%3D%25270%25200%2520100%2520100%2527%253E%253Ccircle%2520cx%3D%252750%2527%2520cy%3D%252750%2527%2520r%3D%252750%2527%2520fill%3D%2527%25235B3A4B%2527%2F%253E%253Ctext%2520x%3D%252750%2527%2520y%3D%252768%2527%2520font-size%3D%252760%2527%2520text-anchor%3D%2527middle%2527%253E%25F0%259F%258C%25BF%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22any%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -41,7 +41,7 @@
     display:flex; justify-content:space-between; align-items:flex-start;
     box-shadow:0 4px 20px rgba(62,39,53,0.18);}
   body.dark header{background:linear-gradient(135deg,#3E2735,#241723);}
-  header h1{font-family:'Cormorant Garamond',Georgia,serif; margin:0; font-size:1.7rem; font-weight:600; letter-spacing:0.3px;}
+  header h1{font-family:'Fraunces',Georgia,serif; margin:0; font-size:1.6rem; font-weight:600; letter-spacing:0.3px;}
   header .sub{font-size:0.78rem; opacity:0.82; margin-top:2px; letter-spacing:0.2px;}
   #settingsBtn{background:rgba(255,255,255,0.15); border:none; color:#fff;
     width:40px; height:40px; border-radius:50%; cursor:pointer; flex-shrink:0;
@@ -57,8 +57,8 @@
   section{display:none;} section.active{display:block;}
   .card{background:var(--surface); border-radius:18px; padding:17px; margin-bottom:13px;
     box-shadow:0 3px 16px rgba(91,58,75,0.09);}
-  .card h2{margin:0 0 11px; font-size:1.02rem; color:var(--plum-dark);
-    font-family:"Avenir Next","Segoe UI",sans-serif; font-weight:700; letter-spacing:0.2px;}
+  .card h2{margin:0 0 11px; font-size:1.08rem; color:var(--plum-dark);
+    font-family:'Fraunces',Georgia,serif; font-weight:600; letter-spacing:0.2px;}
   label{display:block; font-size:0.76rem; color:var(--text-soft); margin:10px 0 4px; font-weight:600;}
   input,select,textarea{width:100%; padding:9px 10px; border-radius:10px;
     border:1px solid var(--line); background:var(--input-bg); color:var(--text); font-size:0.95rem; font-family:inherit;}
@@ -87,7 +87,7 @@
   .status-hero.vrucht{background:linear-gradient(135deg,#C05C6B,#9E3F52);}
   .status-hero.onvrucht{background:linear-gradient(135deg,#6E9276,#4E6B54);}
   .status-hero.onbekend{background:linear-gradient(135deg,#9A8B93,#7A6B74);}
-  .status-hero .big{font-size:1.25rem; font-weight:700; font-family:Georgia,serif;}
+  .status-hero .big{font-size:1.25rem; font-weight:700; font-family:'Fraunces',Georgia,serif;}
   .status-hero .why{font-size:0.8rem; opacity:0.92; margin-top:5px; line-height:1.45;}
 
   /* Gestoord toggle */
@@ -177,12 +177,12 @@
   .status-hero.vrucht{background:linear-gradient(135deg,#C05C6B,#9E3F52);}
   .status-hero.onvrucht{background:linear-gradient(135deg,#6E9276,#4E6B54);}
   .status-hero.onbekend{background:linear-gradient(135deg,#9A8B93,#7A6B74);}
-  .status-hero .big{font-size:1.1rem; font-weight:700; font-family:"Avenir Next","Segoe UI",sans-serif;}
+  .status-hero .big{font-size:1.1rem; font-weight:600; font-family:'Fraunces',Georgia,serif;}
   .status-hero .why{font-size:0.8rem; opacity:0.92; margin-top:5px; line-height:1.45;}
   /* Agenda maandkalender */
   .month-block{margin-bottom:18px;}
-  .month-title{font-family:"Avenir Next","Segoe UI",sans-serif; color:var(--plum-dark);
-    font-size:1rem; font-weight:700; margin:4px 0 8px; letter-spacing:0.2px;}
+  .month-title{font-family:'Fraunces',Georgia,serif; color:var(--plum-dark);
+    font-size:1.05rem; font-weight:600; margin:4px 0 8px; letter-spacing:0.2px;}
   .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px;}
   .dow{font-size:0.64rem; color:var(--text-soft); text-align:center; padding:2px 0; font-weight:600;}
   .mday{aspect-ratio:1; border-radius:11px; display:flex; align-items:center; justify-content:center;
@@ -208,7 +208,7 @@
   #authOverlay.hidden{display:none;}
   .auth-card{background:var(--surface); border-radius:18px; padding:26px 22px; width:100%; max-width:380px;
     box-shadow:0 8px 30px rgba(0,0,0,0.15);}
-  .auth-card h2{font-family:Georgia,serif; color:var(--plum-dark); margin:0 0 4px; font-size:1.3rem;}
+  .auth-card h2{font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); margin:0 0 4px; font-size:1.3rem;}
   .auth-card .tagline{font-size:0.82rem; color:var(--text-soft); margin-bottom:18px;}
   .auth-msg{font-size:0.8rem; margin-top:10px; min-height:18px;}
   .auth-msg.err{color:var(--danger);} .auth-msg.ok{color:var(--sage-dark);}
@@ -248,7 +248,7 @@
       <circle r="58" fill="#C97B84"/><circle r="34" fill="#FBF6F1"/><circle r="16" fill="#5B3A4B"/>
     </g></svg></span>
     <div>
-      <h1 style="font-family:'Cormorant Garamond',Georgia,serif; font-weight:600;">Cycluss</h1>
+      <h1 style="font-family:'Fraunces',Georgia,serif; font-weight:600;">Cycluss</h1>
       <div class="sub" id="headerSub">Sensiplan &middot; natuurlijke gezinsplanning</div>
     </div>
   </div>
@@ -264,7 +264,7 @@
   <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 32px;
     width:100%; max-width:640px; box-shadow:0 -4px 20px rgba(0,0,0,0.2); max-height:85vh; overflow-y:auto;">
     <div style="width:40px; height:4px; background:var(--line); border-radius:4px; margin:0 auto 18px;"></div>
-    <h2 style="margin:0 0 16px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.15rem;">⚙️ Instellingen</h2>
+    <h2 style="margin:0 0 16px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.15rem;">⚙️ Instellingen</h2>
 
     <div class="toggle-row" style="border-bottom:1px solid var(--line); padding-bottom:12px;">
       <span>🌙 Donkere modus</span>
@@ -320,7 +320,7 @@
   background:rgba(0,0,0,0.45); align-items:center; justify-content:center; padding:20px;">
   <div style="background:var(--surface); border-radius:18px; padding:22px 20px; width:100%; max-width:400px;
     box-shadow:0 8px 30px rgba(0,0,0,0.2);">
-    <h2 id="colInfoTitle" style="margin:0 0 10px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
+    <h2 id="colInfoTitle" style="margin:0 0 10px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
     <p id="colInfoText" style="font-size:0.86rem; color:var(--text); line-height:1.6; margin:0 0 16px;"></p>
     <button class="secondary" id="colInfoClose" style="margin:0;">Sluiten</button>
   </div>
@@ -332,7 +332,7 @@
   <div style="background:var(--surface); border-radius:18px; padding:22px 20px; width:100%; max-width:340px;
     box-shadow:0 8px 30px rgba(0,0,0,0.2); text-align:center;">
     <div style="font-size:1.8rem; margin-bottom:6px;">♥</div>
-    <h2 id="sexPopupDate" style="margin:0 0 6px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
+    <h2 id="sexPopupDate" style="margin:0 0 6px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.05rem;"></h2>
     <p style="font-size:0.9rem; color:var(--text); margin:0 0 18px;">Gemeenschap gehad op deze dag?</p>
     <div style="display:flex; gap:10px;">
       <button class="primary" id="sexYes" style="margin:0; flex:1;">Ja</button>
@@ -984,7 +984,7 @@ function renderVandaag(editIdx=null){
   }
   el.innerHTML = `
   ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:13px 16px;">
-    <span style="font-family:'Avenir Next','Segoe UI',sans-serif; color:var(--plum-dark); font-size:1.02rem; font-weight:700;">Dag invullen</span>
+    <span style="font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.08rem; font-weight:600;">Dag invullen</span>
     <button class="secondary" id="bareBackBtn" style="margin:0; width:auto; padding:6px 14px;">← Terug</button>
   </div>` : ''}
   ${bare? '' : (!editing? greetingCardHtml(cycle) : '')}
