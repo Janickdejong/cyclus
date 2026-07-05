@@ -242,6 +242,7 @@
         <input type="time" id="setReminderTime" value="07:00" style="max-width:140px;">
       </div>
       <p class="muted" id="setReminderStatus" style="font-size:0.74rem; margin-top:6px;"></p>
+      <button class="secondary" id="testNotifBtn" style="margin-top:8px;">🔔 Test melding nu</button>
       <p class="muted" style="font-size:0.72rem; margin-top:4px; line-height:1.4;">
         Let op: een melding werkt het betrouwbaarst als de app op je beginscherm staat.
         Als de app helemaal gesloten is, kan er geen melding komen — je krijgt dan een
@@ -1456,6 +1457,33 @@ document.getElementById('setMailSend').addEventListener('click', async ()=>{
   btn.disabled=false;
   btn.textContent = ok ? '✓ Verstuurd!' : 'Verstuur PDF-kaart';
   setTimeout(()=>{ btn.textContent='Verstuur PDF-kaart'; }, 3000);
+});
+document.getElementById('testNotifBtn').addEventListener('click', async ()=>{
+  if(!('Notification' in window)){
+    alert('Dit toestel/deze browser ondersteunt geen meldingen.');
+    return;
+  }
+  let perm=Notification.permission;
+  if(perm==='default'){
+    perm=await Notification.requestPermission();
+  }
+  if(perm!=='granted'){
+    alert('Meldingen zijn niet toegestaan. Ga naar de instellingen van je telefoon → deze app/website → sta meldingen toe.');
+    return;
+  }
+  try{
+    // via service worker indien beschikbaar (betrouwbaarder), anders direct
+    if('serviceWorker' in navigator){
+      const reg=await navigator.serviceWorker.getRegistration();
+      if(reg && reg.showNotification){
+        reg.showNotification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
+        return;
+      }
+    }
+    new Notification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
+  }catch(err){
+    alert('Melding kon niet worden getoond: '+err.message);
+  }
 });
 
 /* ---- Kolom-uitleg popup ---- */
