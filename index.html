@@ -575,6 +575,11 @@
   if(ml) ml.href=manifestUrl;
 })();
 
+// Service worker registreren (nodig voor meldingen op Android/Chrome)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW registratie mislukt', e));
+}
+
 /* ============ Supabase ============ */
 const SUPABASE_URL = 'https://bszbxrsiyrcuuyjuipkk.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzemJ4cnNpeXJjdXV5anVpcGtrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMxODA2MjQsImV4cCI6MjA5ODc1NjYyNH0.lYi0ChGtBv4eRPQSdu2krk1Xb_WKnL1ANbYjakqumdE';
@@ -1471,19 +1476,8 @@ document.getElementById('testNotifBtn').addEventListener('click', async ()=>{
     alert('Meldingen zijn niet toegestaan. Ga naar de instellingen van je telefoon → deze app/website → sta meldingen toe.');
     return;
   }
-  try{
-    // via service worker indien beschikbaar (betrouwbaarder), anders direct
-    if('serviceWorker' in navigator){
-      const reg=await navigator.serviceWorker.getRegistration();
-      if(reg && reg.showNotification){
-        reg.showNotification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
-        return;
-      }
-    }
-    new Notification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
-  }catch(err){
-    alert('Melding kon niet worden getoond: '+err.message);
-  }
+  const ok=await showAppNotification('🌷 Cycluss — test', 'Gelukt! Je meldingen werken.');
+  if(!ok) alert('Melding kon niet worden getoond. Zorg dat de app op je beginscherm staat en probeer opnieuw.');
 });
 
 /* ---- Kolom-uitleg popup ---- */
@@ -2053,6 +2047,25 @@ async function requestNotificationPermission(){
   return result === 'granted';
 }
 
+/* ---- Meldingen via service worker ---- */
+async function showAppNotification(title, body){
+  if(!('Notification' in window) || Notification.permission!=='granted') return false;
+  try{
+    if('serviceWorker' in navigator){
+      const reg = await navigator.serviceWorker.getRegistration() || await navigator.serviceWorker.ready;
+      if(reg && reg.showNotification){
+        await reg.showNotification(title, {
+          body,
+          icon:'data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#5B3A4B"/><g transform="translate(256,256)"><circle r="58" fill="#C97B84"/><circle r="34" fill="#FBF6F1"/></g></svg>')
+        });
+        return true;
+      }
+    }
+    new Notification(title, { body });
+    return true;
+  }catch(e){ console.warn('Melding faalde', e); return false; }
+}
+
 function scheduleDailyReminder(){
   // Verwijder eerdere timeout
   if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
@@ -2067,16 +2080,12 @@ function scheduleDailyReminder(){
   if(next <= now) next.setDate(next.getDate() + 1); // morgen als tijd al voorbij is
   const ms = next - now;
 
-  window._reminderTimeout = setTimeout(()=>{
+  window._reminderTimeout = setTimeout(async ()=>{
     // Alleen melden als vandaag nog niet ingevuld
     const cycle = currentCycle();
     const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO());
     if(!vandaagAl){
-      new Notification('🌿 Cyclus', {
-        body: 'Vergeet je temperatuur niet te meten!',
-        icon: '',
-        badge: ''
-      });
+      await showAppNotification('🌷 Cycluss', 'Vergeet je temperatuur niet te meten!');
     }
     // Plan voor morgen opnieuw in
     scheduleDailyReminder();
