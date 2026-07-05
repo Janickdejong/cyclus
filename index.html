@@ -539,9 +539,20 @@ function computeTempRise(cycle){
 }
 function cervixRank(d){ return d.cervixAfk ? QUALITY_RANK[d.cervixAfk] : -1; }
 function computePeakDay(cycle){
+  // Piekdag = laatste dag met beste kwaliteit, MAAR alleen als de dag erna
+  // de kwaliteit daalt of verdwijnt (anders weet je nog niet dat het de piekdag was).
+  // Met maar één dag ingevoerd is er dus nooit al een piekdag.
+  const days=cycle.days;
   let maxRank=-1, peakIdx=-1;
-  cycle.days.forEach((d,i)=>{ const r=cervixRank(d); if(r>=1 && r>=maxRank){maxRank=r; peakIdx=i;} });
-  if(peakIdx===-1 || maxRank<2) return null; // piekdag vereist echte slijmkwaliteit (S of S+)
+  for(let i=0;i<days.length;i++){
+    const r=cervixRank(days[i]);
+    if(r>=1 && r>=maxRank){ maxRank=r; peakIdx=i; }
+  }
+  if(peakIdx===-1 || maxRank<2) return null; // minstens S of S+ vereist
+  // check: is er een dag NA de piekdag met lagere of geen kwaliteit?
+  // (pas dan weet je dat de piekdag voorbij is)
+  const hasFollowUp = days.slice(peakIdx+1).some(d => cervixRank(d) < maxRank);
+  if(!hasFollowUp) return null; // nog geen bevestiging — piekdag nog niet aanwijsbaar
   return { index:peakIdx, rank:maxRank };
 }
 function computeBMHClosed(cycle){
