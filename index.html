@@ -1476,8 +1476,24 @@ document.getElementById('testNotifBtn').addEventListener('click', async ()=>{
     alert('Meldingen zijn niet toegestaan. Ga naar de instellingen van je telefoon → deze app/website → sta meldingen toe.');
     return;
   }
-  const ok=await showAppNotification('🌷 Cycluss — test', 'Gelukt! Je meldingen werken.');
-  if(!ok) alert('Melding kon niet worden getoond. Zorg dat de app op je beginscherm staat en probeer opnieuw.');
+  // Zorg dat er een service worker is (registreer + wacht indien nodig)
+  try{
+    if('serviceWorker' in navigator){
+      let reg = await navigator.serviceWorker.getRegistration();
+      if(!reg){
+        reg = await navigator.serviceWorker.register('sw.js');
+      }
+      await navigator.serviceWorker.ready; // wacht tot actief
+      if(reg && reg.showNotification){
+        await reg.showNotification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
+        return;
+      }
+    }
+    // fallback
+    new Notification('🌷 Cycluss — test', { body:'Gelukt! Je meldingen werken.' });
+  }catch(err){
+    alert('Melding kon niet worden getoond: '+err.message+'\n\nControleer of sw.js goed geüpload is naast index.html.');
+  }
 });
 
 /* ---- Kolom-uitleg popup ---- */
