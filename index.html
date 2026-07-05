@@ -196,9 +196,22 @@
 </div>
 
 <header>
-  <div>
-    <h1>&#127807; Cyclus &amp; Vruchtbaarheid</h1>
-    <div class="sub" id="headerSub">Sensiplan &middot; symptothermale methode</div>
+  <div style="display:flex; align-items:center; gap:10px;">
+    <span style="flex-shrink:0;"><svg width="34" height="34" viewBox="0 0 512 512"><g transform="translate(256,256)">
+      <ellipse rx="52" ry="90" transform="rotate(0) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(45) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(90) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(135) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(180) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(225) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(270) translate(0,-78)" fill="#E8B4BC"/>
+      <ellipse rx="52" ry="90" transform="rotate(315) translate(0,-78)" fill="#E8B4BC"/>
+      <circle r="58" fill="#C97B84"/><circle r="34" fill="#FBF6F1"/><circle r="16" fill="#5B3A4B"/>
+    </g></svg></span>
+    <div>
+      <h1 style="font-family:'Cormorant Garamond',Georgia,serif; font-weight:600;">Cycluss</h1>
+      <div class="sub" id="headerSub">Sensiplan &middot; natuurlijke gezinsplanning</div>
+    </div>
   </div>
   <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
     <button id="settingsBtn" title="Instellingen"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
@@ -229,6 +242,10 @@
         <input type="time" id="setReminderTime" value="07:00" style="max-width:140px;">
       </div>
       <p class="muted" id="setReminderStatus" style="font-size:0.74rem; margin-top:6px;"></p>
+      <p class="muted" style="font-size:0.72rem; margin-top:4px; line-height:1.4;">
+        Let op: een melding werkt het betrouwbaarst als de app op je beginscherm staat.
+        Als de app helemaal gesloten is, kan er geen melding komen — je krijgt dan een
+        herinnering zodra je de app die dag weer opent.</p>
     </div>
 
     <div style="padding:14px 0;">
@@ -830,10 +847,9 @@ document.querySelectorAll('nav button').forEach(btn=>{
 });
 function goTab(name){ document.querySelector(`nav button[data-tab=${name}]`).click(); }
 document.getElementById('fabAdd').addEventListener('click',()=>{
-  // forceer een kaal, leeg invoerformulier voor een (oude) dag — zonder begroeting
+  // open kaal invoerformulier zonder een tab actief te maken
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
-  document.querySelector('nav button[data-tab=vandaag]').classList.add('active');
   document.getElementById('tab-vandaag').classList.add('active');
   renderVandaag('bare'); // kaal formulier, geen begroeting
 });
@@ -926,6 +942,10 @@ function renderVandaag(editIdx=null){
     </div>`;
   }
   el.innerHTML = `
+  ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:12px 15px;">
+    <span style="font-family:Georgia,serif; color:var(--plum-dark); font-size:1.05rem;">➕ Dag invullen</span>
+    <button class="secondary" id="bareBackBtn" style="margin:0; width:auto; padding:6px 14px;">← Terug</button>
+  </div>` : ''}
   ${bare? '' : (!editing? greetingCardHtml(cycle) : '')}
   ${bare? '' : `<div class="status-hero ${status.cls}">
     <div class="big">${status.label}</div>
@@ -933,7 +953,7 @@ function renderVandaag(editIdx=null){
   </div>`}
   ${bare? '' : predHtml}
   <div class="card">
-    <h2>${editing? 'Dag '+dayNum+' bewerken' : (bare? 'Dag invullen' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren')}</h2>
+    <h2>${editing? 'Dag '+dayNum+' bewerken' : (bare? 'Gegevens' : 'Cyclus '+cycle.nummer+' · dag '+dayNum+' invoeren')}</h2>
     <label>Datum</label>
     <input type="date" id="f_date" value="${suggestedDate}">
     <div class="row">
@@ -1039,10 +1059,13 @@ function renderVandaag(editIdx=null){
       note:document.getElementById('f_note').value||''
     };
     if(editing) cycle.days[editIdx]=newDay; else cycle.days.push(newDay);
+    cycle.days.sort((a,b)=>a.date<b.date?-1:1); // altijd op datum gesorteerd houden
     await saveData();
     goTab('kaart');
   });
   if(editing) document.getElementById('cancelEditBtn').addEventListener('click',()=>renderVandaag());
+  const bb=document.getElementById('bareBackBtn');
+  if(bb) bb.addEventListener('click',()=>goTab('vandaag'));
 }
 function setupChips(id,onChange,single,preselect,preSet){
   const g=document.getElementById(id); if(!g) return;
@@ -1953,17 +1976,31 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 async function startApp(){
   authOverlay.classList.add('hidden');
   await loadData();
-  // check: is er al een dag ingevoerd voor vandaag?
-  const cycle = currentCycle();
-  const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO());
-  if(vandaagAl){
-    goTab('kaart'); // vandaag al ingevuld → meteen kaart tonen
-  } else {
-    renderVandaag();
-    goTab('vandaag'); // nog niet ingevuld → invoerformulier
-  }
-  // notificatie-herinnnering instellen
+  renderVandaag();
+  goTab('vandaag'); // altijd starten op Vandaag (met begroeting/bijbeltekst)
+  // notificatie-herinnering instellen
   scheduleDailyReminder();
+  // zachte in-app herinnering: als reminder aanstaat, tijd voorbij is en vandaag nog niet gemeten
+  try{
+    const cycle=currentCycle();
+    const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO() && d.temp);
+    if(getReminderEnabled() && !vandaagAl){
+      const [h,m]=getReminderTime().split(':').map(Number);
+      const now=new Date();
+      if(now.getHours()>h || (now.getHours()===h && now.getMinutes()>=m)){
+        setTimeout(()=>{
+          const el=document.getElementById('tab-vandaag');
+          if(el && el.classList.contains('active')){
+            const banner=document.createElement('div');
+            banner.className='warn';
+            banner.style.margin='0 0 12px';
+            banner.innerHTML='⏰ Je hebt vandaag nog geen temperatuur ingevuld. Vergeet je meting niet!';
+            el.insertBefore(banner, el.firstChild);
+          }
+        }, 400);
+      }
+    }
+  }catch(e){}
 }
 
 /* ---- Dagelijkse herinnering ---- */
