@@ -202,9 +202,38 @@
 
 <section id="tab-kaart">
   <div class="card">
-    <h2 id="kaartTitle">Cycluskaart</h2>
-    <div id="interpretationBox" style="font-size:0.82rem; line-height:1.5;"></div>
-    <button class="secondary" id="mailCycleBtn">&#9993;&#65039; Deze cyclus mailen</button>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <div style="flex:1;">
+        <h2 id="kaartTitle">Cycluskaart</h2>
+        <div id="interpretationBox" style="font-size:0.82rem; line-height:1.5;"></div>
+      </div>
+      <button id="mailIconBtn" title="Cyclus mailen" style="
+        background:var(--rose); border:none; color:#fff; width:42px; height:42px;
+        border-radius:50%; font-size:1.1rem; cursor:pointer; flex-shrink:0;
+        margin-left:10px; margin-top:2px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+        ✉️
+      </button>
+    </div>
+  </div>
+
+  <!-- Mail popup -->
+  <div id="mailPopup" style="display:none; position:fixed; inset:0; z-index:50;
+    background:rgba(0,0,0,0.45); align-items:flex-end; justify-content:center;">
+    <div style="background:var(--surface); border-radius:20px 20px 0 0; padding:22px 20px 32px;
+      width:100%; max-width:640px; box-shadow:0 -4px 20px rgba(0,0,0,0.2);">
+      <div style="width:40px; height:4px; background:var(--line); border-radius:4px;
+        margin:0 auto 18px;"></div>
+      <h2 style="margin:0 0 8px; font-family:Georgia,serif; color:var(--plum-dark); font-size:1.1rem;">
+        ✉️ Cyclus mailen</h2>
+      <p style="font-size:0.84rem; color:var(--text-soft); line-height:1.55; margin:0 0 16px;">
+        Stuur de ingevulde cycluskaart als <b>PDF-bijlage</b> naar je e-mailadres.
+        De mail wordt verstuurd via <b>kaart@cycluss.nl</b>. Handig als back-up of om
+        mee te nemen naar een arts of Sensiplan-consulent.</p>
+      <p style="font-size:0.82rem; color:var(--text-soft); margin:0 0 18px;">
+        📬 Ontvanger: <b id="mailPopupEmail"></b></p>
+      <button class="primary" id="mailPopupSend">Verstuur PDF-kaart</button>
+      <button class="secondary" id="mailPopupClose" style="margin-top:8px;">Annuleren</button>
+    </div>
   </div>
   <div class="card" style="padding:10px;">
     <div class="kaart-outer" id="kaartOuter"></div>
@@ -1450,14 +1479,34 @@ async function sendCycleMail(cycle, silent){
     return false;
   }
 }
-document.getElementById('mailCycleBtn').addEventListener('click', async (ev)=>{
-  const btn=ev.currentTarget;
-  const cycle=currentCycle();
+/* ---- Mail popup ---- */
+document.getElementById('mailIconBtn').addEventListener('click', ()=>{
+  const popup=document.getElementById('mailPopup');
+  const emailEl=document.getElementById('mailPopupEmail');
+  if(emailEl) emailEl.textContent = currentUser ? currentUser.email : '—';
+  popup.style.display='flex';
+});
+document.getElementById('mailPopupClose').addEventListener('click', ()=>{
+  document.getElementById('mailPopup').style.display='none';
+});
+document.getElementById('mailPopup').addEventListener('click', (e)=>{
+  if(e.target===document.getElementById('mailPopup'))
+    document.getElementById('mailPopup').style.display='none';
+});
+document.getElementById('mailPopupSend').addEventListener('click', async ()=>{
+  const btn=document.getElementById('mailPopupSend');
   btn.textContent='Versturen…'; btn.disabled=true;
-  const ok=await sendCycleMail(cycle, false);
-  btn.textContent = ok ? '✓ Verstuurd naar '+currentUser.email : '✉️ Deze cyclus mailen';
+  const ok=await sendCycleMail(currentCycle(), false);
   btn.disabled=false;
-  setTimeout(()=>{ btn.innerHTML='&#9993;&#65039; Deze cyclus mailen'; }, 4000);
+  if(ok){
+    btn.textContent='✓ Verstuurd!';
+    setTimeout(()=>{
+      document.getElementById('mailPopup').style.display='none';
+      btn.textContent='Verstuur PDF-kaart';
+    }, 2000);
+  } else {
+    btn.textContent='Verstuur PDF-kaart';
+  }
 });
 
 /* ---- Demo data ---- */
