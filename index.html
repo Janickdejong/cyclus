@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cyclus &middot; Sensiplan</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --plum:#5B3A4B; --plum-dark:#3E2735; --rose:#C97B84; --cream:#FBF6F1;
@@ -113,6 +114,24 @@
     border-bottom:1px solid var(--line); font-size:0.82rem; align-items:center;}
   .daylist-item button{border:none; background:none; color:var(--plum); font-size:0.75rem;
     cursor:pointer; text-decoration:underline; padding:4px;}
+  /* Agenda maandkalender */
+  .month-block{margin-bottom:18px;}
+  .month-title{font-family:Georgia,serif; color:var(--plum-dark); font-size:0.95rem; margin:4px 0 6px;}
+  .month-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:3px;}
+  .dow{font-size:0.62rem; color:var(--text-soft); text-align:center; padding:2px 0;}
+  .mday{aspect-ratio:1; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    font-size:0.72rem; background:var(--input-bg); color:var(--text-soft); position:relative;}
+  .mday.empty{background:transparent;}
+  .mday.bloeding{background:#C05C6B; color:#fff; font-weight:600;}
+  .mday.vrucht{background:#F3C9CF; color:#7A3A48; font-weight:600;}
+  body.dark .mday.vrucht{background:#6B3A48; color:#F3C9CF;}
+  .mday.onvrucht{background:#DCE9DE; color:#3E5C46;}
+  body.dark .mday.onvrucht{background:#2F4536; color:#A8C9B0;}
+  .mday.pred{border:1.5px dashed var(--rose); background:transparent; color:var(--rose);}
+  .mday.today{outline:2px solid var(--plum-dark); outline-offset:1px;}
+  .aleg{width:11px; height:11px; border-radius:4px; display:inline-block; vertical-align:-1px; margin-right:3px;}
+  .bloed-dot{background:#C05C6B;} .fert-dot{background:#F3C9CF;}
+  .onvr-dot{background:#DCE9DE;} .pred-dot{border:1.5px dashed var(--rose);}
   /* Login-overlay */
   #authOverlay{position:fixed; inset:0; background:var(--bg); z-index:100;
     display:flex; align-items:center; justify-content:center; padding:20px;}
@@ -159,6 +178,7 @@
 <nav>
   <button data-tab="vandaag" class="active">Vandaag</button>
   <button data-tab="kaart">Kaart</button>
+  <button data-tab="agenda">Agenda</button>
   <button data-tab="cycli">Cycli</button>
   <button data-tab="info">Uitleg</button>
 </nav>
@@ -181,6 +201,19 @@
   <div class="card">
     <h2>Dagen bewerken</h2>
     <div id="dayEditList"></div>
+  </div>
+</section>
+
+<section id="tab-agenda">
+  <div class="card">
+    <h2>Maandoverzicht</h2>
+    <div class="legend" style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.74rem; color:var(--text-soft); margin-bottom:10px;">
+      <span><span class="aleg bloed-dot"></span> bloeding</span>
+      <span><span class="aleg fert-dot"></span> vruchtbaar</span>
+      <span><span class="aleg onvr-dot"></span> onvruchtbaar</span>
+      <span><span class="aleg pred-dot"></span> verwacht</span>
+    </div>
+    <div id="agendaMonths"></div>
   </div>
 </section>
 
@@ -426,9 +459,12 @@ document.querySelectorAll('nav button').forEach(btn=>{
     document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    if(btn.dataset.tab==='vandaag') renderVandaag();
-    if(btn.dataset.tab==='kaart') renderKaart();
-    if(btn.dataset.tab==='cycli') renderCycleList();
+    try{
+      if(btn.dataset.tab==='vandaag') renderVandaag();
+      if(btn.dataset.tab==='kaart') renderKaart();
+      if(btn.dataset.tab==='agenda') renderAgenda();
+      if(btn.dataset.tab==='cycli') renderCycleList();
+    }catch(e){ console.error('Render error:',e); alert('Fout bij tonen: '+e.message); }
   });
 });
 function goTab(name){ document.querySelector(`nav button[data-tab=${name}]`).click(); }
@@ -824,6 +860,195 @@ document.getElementById('themeToggle').addEventListener('click', async ()=>{
   if(kaartActive) renderKaart();
 });
 
+/* ---- Agenda: maandoverzicht ---- */
+function buildDayStatusMap(){
+  // map 'YYYY-MM-DD' -> 'bloeding' | 'vrucht' | 'onvrucht'
+  const map={};
+  for(const c of DATA.cycles){
+    const start=computeCycleStartInfertile(c);
+    const end=computeInfertileAfterOvulation(c);
+    c.days.forEach((d,i)=>{
+      let st='onvrucht';
+      const f=dayFertility(i,start,end);
+      if(f==='v'||f==='v/') st='vrucht';
+      if(d.bloeding) st='bloeding';
+      map[d.date]=st;
+    });
+  }
+  // voorspelling: verwachte volgende menstruatie + vruchtbaar venster als 'pred'
+  const pred=computePrediction();
+  if(pred){
+    for(let i=0;i<5;i++){ const dt=addDays(pred.nextMenstru,i); if(!map[dt]) map[dt]='pred'; }
+    if(pred.fertileStart){
+      let dt=pred.fertileStart;
+      while(dt<=pred.fertileEnd){ if(!map[dt]) map[dt]='pred'; dt=addDays(dt,1); }
+    }
+  }
+  return map;
+}
+function renderAgenda(){
+  const el=document.getElementById('agendaMonths');
+  const map=buildDayStatusMap();
+  const dates=Object.keys(map).sort();
+  if(dates.length===0){ el.innerHTML='<p class="muted">Nog geen gegevens om te tonen.</p>'; return; }
+  const first=new Date(dates[0]+'T00:00:00');
+  const last=new Date(dates[dates.length-1]+'T00:00:00');
+  const today=todayISO();
+  const months=[];
+  let cur=new Date(first.getFullYear(), first.getMonth(), 1);
+  const end=new Date(last.getFullYear(), last.getMonth(), 1);
+  while(cur<=end){ months.push(new Date(cur)); cur.setMonth(cur.getMonth()+1); }
+  const dows=['ma','di','wo','do','vr','za','zo'];
+  let html='';
+  for(const m of months.reverse()){ // nieuwste maand bovenaan
+    const y=m.getFullYear(), mo=m.getMonth();
+    const monthName=m.toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
+    const firstDow=(new Date(y,mo,1).getDay()+6)%7; // ma=0
+    const daysInMonth=new Date(y,mo+1,0).getDate();
+    html+=`<div class="month-block"><div class="month-title">${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</div>`;
+    html+=`<div class="month-grid">`;
+    html+=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+    for(let i=0;i<firstDow;i++) html+=`<div class="mday empty"></div>`;
+    for(let d=1;d<=daysInMonth;d++){
+      const iso=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const st=map[iso]||'';
+      const isToday=iso===today?' today':'';
+      html+=`<div class="mday ${st}${isToday}">${d}</div>`;
+    }
+    html+=`</div></div>`;
+  }
+  el.innerHTML=html;
+}
+
+/* ---- PDF-export van de kaart ---- */
+function drawExportCanvas(cycle){
+  const days=cycle.days;
+  const n=Math.max(days.length,10);
+  const rise=computeTempRise(cycle);
+  const peak=computePeakDay(cycle);
+  const start=computeCycleStartInfertile(cycle);
+  const end=computeInfertileAfterOvulation(cycle);
+  const dayW=34, labelW=110, chartH=240;
+  const rowDefs=[
+    {key:'piek', label:'Piekdag P·1·2·3', h:22},
+    {key:'safk', label:'S-afkorting', h:22},
+    {key:'dagnr', label:'Cyclusdag', h:22},
+    {key:'datum', label:'Datum', h:22},
+    {key:'bloeding', label:'Bloeding', h:22},
+    {key:'uiterlijk', label:'Slijm uiterlijk', h:90},
+    {key:'bmh', label:'Baarmoederhals', h:22},
+    {key:'extra', label:'O / B / X', h:22},
+    {key:'vrucht', label:'Vruchtbare dagen', h:22}
+  ];
+  const tableH=rowDefs.reduce((a,r)=>a+r.h,0);
+  const headerH=46;
+  const W=labelW+n*dayW+20, H=headerH+chartH+tableH+20;
+  const SC=2; // scherpte
+  const cv=document.createElement('canvas');
+  cv.width=W*SC; cv.height=H*SC;
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(SC,0,0,SC,0,0);
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,W,H);
+
+  // titel
+  ctx.fillStyle='#5B3A4B'; ctx.font='bold 15px Georgia';
+  ctx.fillText(`Cycluskaart — cyclus ${cycle.nummer}  (start ${fmtDateLong(cycle.startDate)})`, 12, 22);
+  ctx.font='10px sans-serif'; ctx.fillStyle='#6b5b64';
+  let sub=[];
+  if(rise) sub.push(`stijging bevestigd dag ${rise.closedAt+1}, hulplijn ${rise.hulplijn.toFixed(2)}°C`);
+  if(peak) sub.push(`piekdag dag ${peak.index+1}`);
+  if(end.combined!==null) sub.push(`onvruchtbaar vanaf avond dag ${end.combined+1}`);
+  ctx.fillText(sub.join('  ·  ')||'nog geen afgesloten interpretatie', 12, 38);
+
+  // temperatuurgrafiek
+  const tMin=35.9, tMax=37.6, gTop=headerH+6, gBottom=headerH+chartH-16;
+  const yFor=t=>gTop+(tMax-t)/(tMax-tMin)*(gBottom-gTop);
+  const xFor=i=>labelW+i*dayW+dayW/2;
+  for(let t=36.0;t<=37.5+0.001;t+=0.1){
+    const y=yFor(t), major=(Math.round(t*10)%5===0);
+    ctx.strokeStyle=major?'#C9B8AE':'#EDE2DB'; ctx.beginPath();
+    ctx.moveTo(labelW,y); ctx.lineTo(W-10,y); ctx.stroke();
+    ctx.fillStyle=major?'#5B3A4B':'#9a8a92';
+    ctx.font=major?'bold 9px sans-serif':'8px sans-serif';
+    ctx.fillText(t.toFixed(1), labelW-32, y+3);
+  }
+  for(let i=0;i<=n;i++){ ctx.strokeStyle='#EDE2DB'; ctx.beginPath();
+    ctx.moveTo(labelW+i*dayW,gTop); ctx.lineTo(labelW+i*dayW,gBottom); ctx.stroke(); }
+  if(rise){ const y=yFor(rise.hulplijn); ctx.strokeStyle='#C97B84'; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(labelW,y); ctx.lineTo(W-10,y); ctx.stroke(); ctx.setLineDash([]); }
+  ctx.strokeStyle='#5B3A4B'; ctx.lineWidth=1.6; ctx.beginPath(); let st2=false;
+  days.forEach((d,i)=>{ if(!d.temp){st2=false;return;} const x=xFor(i),y=yFor(parseFloat(d.temp));
+    if(!st2){ctx.moveTo(x,y);st2=true;} else ctx.lineTo(x,y); });
+  ctx.stroke();
+  days.forEach((d,i)=>{ if(!d.temp) return; const t=parseFloat(d.temp),x=xFor(i),y=yFor(t);
+    if(d.gestoord){ ctx.beginPath(); ctx.arc(x,y,3.4,0,7); ctx.strokeStyle='#B8860B'; ctx.lineWidth=1.3;
+      ctx.stroke(); ctx.fillStyle='#fff'; ctx.fill(); ctx.strokeStyle='#5B3A4B'; ctx.lineWidth=1.6; return; }
+    const isR=rise&&rise.riseIdx.includes(i);
+    ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fillStyle=isR?'#C97B84':'#5B3A4B'; ctx.fill();
+    if(isR){ ctx.fillStyle='#C97B84'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+      ctx.fillText('▲',x,y-7); ctx.textAlign='left'; } });
+  if(rise){ ctx.fillStyle='#6b5b64'; ctx.font='8px sans-serif'; ctx.textAlign='center';
+    rise.lowIdx.forEach((idx,j)=>ctx.fillText(String(6-j),xFor(idx),gBottom+11)); ctx.textAlign='left'; }
+
+  // tabel
+  let y0=headerH+chartH;
+  for(const row of rowDefs){
+    ctx.strokeStyle='#D8CCC5'; ctx.strokeRect(10,y0,labelW-10,row.h);
+    ctx.fillStyle='#F7EFEA'; ctx.fillRect(10.5,y0+0.5,labelW-11,row.h-1);
+    ctx.fillStyle='#6b5b64'; ctx.font='8.5px sans-serif';
+    ctx.fillText(row.label, 14, y0+row.h/2+3);
+    for(let i=0;i<n;i++){
+      const x=labelW+i*dayW;
+      ctx.strokeStyle='#EDE2DB'; ctx.strokeRect(x,y0,dayW,row.h);
+      const d=days[i]; if(!d) continue;
+      ctx.fillStyle='#2E2430'; ctx.font='9px sans-serif'; ctx.textAlign='center';
+      const cx=x+dayW/2, cy=y0+row.h/2+3;
+      switch(row.key){
+        case 'piek':
+          if(peak && i===peak.index){ ctx.fillStyle='#C97B84'; ctx.font='bold 10px sans-serif'; ctx.fillText('P',cx,cy); }
+          else if(peak && i>peak.index && i<=peak.index+3){ ctx.fillStyle='#C97B84'; ctx.fillText(String(i-peak.index),cx,cy); }
+          break;
+        case 'safk': if(d.cervixAfk) ctx.fillText(d.cervixAfk,cx,cy); break;
+        case 'dagnr': ctx.fillText(String(i+1),cx,cy); break;
+        case 'datum': ctx.font='7.5px sans-serif'; ctx.fillText(fmtDate(d.date),cx,cy); break;
+        case 'bloeding':
+          if(d.bloeding){ ctx.fillStyle='#C05C6B';
+            ctx.fillRect(x+3,y0+5,dayW-6,row.h-10); }
+          break;
+        case 'uiterlijk':
+          if(d.uiterlijk){ ctx.save(); ctx.translate(cx+3,y0+row.h-4); ctx.rotate(-Math.PI/2);
+            ctx.font='7.5px sans-serif'; ctx.textAlign='left'; ctx.fillStyle='#2E2430';
+            ctx.fillText(d.uiterlijk.slice(0,20),0,0); ctx.restore(); }
+          break;
+        case 'bmh':
+          if(d.bmOpening){ const sym=d.bmOpening==='gesloten'?'●':(d.bmOpening==='deels'?'○':'◯');
+            ctx.fillText(sym+(d.bmStevigheid?(d.bmStevigheid==='hard'?'h':'z'):''),cx,cy); }
+          break;
+        case 'extra': if(d.extra) ctx.fillText(d.extra.replaceAll(',',' '),cx,cy); break;
+        case 'vrucht': { const f=dayFertility(i,start,end);
+          if(f){ ctx.fillStyle='#B85C5C'; ctx.font='bold 9px sans-serif'; ctx.fillText(f,cx,cy); } }
+          break;
+      }
+      ctx.textAlign='left';
+    }
+    y0+=row.h;
+  }
+  return cv;
+}
+function makeCyclePdfBase64(cycle){
+  const cv=drawExportCanvas(cycle);
+  const img=cv.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf=new jsPDF({ orientation:'landscape', unit:'mm', format:'a4' });
+  const pw=pdf.internal.pageSize.getWidth()-16, ph=pdf.internal.pageSize.getHeight()-16;
+  const ratio=cv.height/cv.width;
+  let w=pw, h=pw*ratio;
+  if(h>ph){ h=ph; w=ph/ratio; }
+  pdf.addImage(img,'PNG',8,8,w,h);
+  const b64=pdf.output('datauristring').split(',')[1];
+  return b64;
+}
+
 /* ---- Cyclus mailen ---- */
 function buildCycleText(cycle){
   const end=computeInfertileAfterOvulation(cycle);
@@ -858,13 +1083,21 @@ function buildCycleText(cycle){
 async function sendCycleMail(cycle, silent){
   if(!sb || !currentUser){ if(!silent) alert('Je moet ingelogd zijn om te mailen.'); return false; }
   const subject=`Cycluskaart cyclus ${cycle.nummer} (start ${fmtDate(cycle.startDate)})`;
-  const text=buildCycleText(cycle);
+  const text=`In de bijlage vind je de ingevulde cycluskaart van cyclus ${cycle.nummer} als PDF.\n\nVerstuurd vanuit de Cyclus-app.`;
   const to=currentUser.email;
+  let pdfBase64=null;
+  try{ pdfBase64=makeCyclePdfBase64(cycle); }
+  catch(e){ console.warn('PDF maken mislukt, val terug op tekst', e); }
+  const body={ to, subject, text };
+  if(pdfBase64){
+    body.attachment={ filename:`cycluskaart-${cycle.nummer}.pdf`, content:pdfBase64 };
+  } else {
+    body.text = buildCycleText(cycle); // terugval: tekstversie
+  }
   try{
-    const { data, error } = await sb.functions.invoke('mail-cyclus', { body:{ to, subject, text } });
+    const { data, error } = await sb.functions.invoke('mail-cyclus', { body });
     if(error) throw error;
-    if(data && data.id){ return true; }
-    if(data && data.error){ throw new Error(data.error); }
+    if(data && data.error) throw new Error(JSON.stringify(data.error));
     return true;
   }catch(e){
     if(!silent) alert('Mailen mislukt: '+(e.message||e)+'\n\nControleer of het domein in Resend geverifieerd is.');
