@@ -673,6 +673,16 @@
   </div>
 
   <div class="card">
+    <h2>📊 Het overzicht (agenda)</h2>
+    <p class="note" style="font-size:0.84rem; line-height:1.65;">
+    Onderaan de Agenda-tab vind je een overzicht met je gemiddelden over de afgeronde cycli.
+    Deze cijfers helpen je patronen te herkennen: hoe lang je cyclus meestal duurt (met de
+    kortste en langste), hoeveel dagen je bloeding gemiddeld aanhoudt, en hoeveel vruchtbare
+    dagen je gemiddeld per cyclus hebt. Hoe meer cycli je bijhoudt, hoe nauwkeuriger het beeld —
+    handig om je eigen ritme te leren kennen of om te bespreken met een arts of consulent.</p>
+  </div>
+
+  <div class="card">
     <h2>🧪 Voorbeeld bekijken</h2>
     <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet? Laad twee
     complete voorbeeldcycli — helemaal los van je eigen gegevens.</p>
@@ -1287,7 +1297,11 @@ function buildKaartInto(targetId, cycle){
 
   // grafiek: vaste as links + scrollend datadeel
   const cw=n*dayW, ch=chartH;
-  const DPR=Math.min(window.devicePixelRatio||1, 3);
+  // DPR begrenzen zodat het brede canvas nooit de browserlimiet (~4096px) overschrijdt.
+  // Anders rendert de temperatuurlijn halverwege een lange kaart niet meer.
+  const MAX_CANVAS_W = 4000;
+  let DPR = Math.min(window.devicePixelRatio||1, 3);
+  if(cw * DPR > MAX_CANVAS_W){ DPR = Math.max(1, MAX_CANVAS_W / cw); }
   let html=`<div class="kaart-inner">`;
   html+=`<div class="chart-row">`
       + `<canvas id="${axisId}" width="${labelW*DPR}" height="${ch*DPR}" class="axis-canvas" style="width:${labelW}px;height:${ch}px;"></canvas>`
@@ -1384,7 +1398,8 @@ function buildKaartInto(targetId, cycle){
     gridMinor: dark?'#332A3A':'#F0E7E1',
     labelMajor: dark?'#E0BFD0':'#5B3A4B',
     labelMinor: dark?'#B8A9B4':'#8a7a83',
-    line: dark?'#E0BFD0':'#5B3A4B',
+    line: dark?'#C9A9BD':'#B79AAA',   // zachtere verbindingslijn (minder zwart)
+    dot: dark?'#E0BFD0':'#5B3A4B',     // punten blijven duidelijk donker
     rose:'#C97B84', amber:'#D4A020',
     dotBg: dark?'#2A2230':'#fff',
     lowNum: dark?'#B8A9B4':'#6b5b64',
@@ -1427,7 +1442,7 @@ function buildKaartInto(targetId, cycle){
     ctx.strokeStyle=C.rose; ctx.setLineDash([5,4]);
     ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cw,y); ctx.stroke(); ctx.setLineDash([]);
   }
-  ctx.strokeStyle=C.line; ctx.lineWidth=1.8; ctx.beginPath();
+  ctx.strokeStyle=C.line; ctx.lineWidth=1.4; ctx.beginPath();
   let started=false;
   days.forEach((d,i)=>{
     if(!d.temp){ started=false; return; }
@@ -1443,12 +1458,12 @@ function buildKaartInto(targetId, cycle){
       ctx.beginPath(); ctx.arc(x,y,3.4,0,7);
       ctx.strokeStyle=C.amber; ctx.lineWidth=1.4; ctx.stroke();
       ctx.fillStyle=C.dotBg; ctx.fill();
-      ctx.strokeStyle=C.line; ctx.lineWidth=1.8;
+      ctx.strokeStyle=C.line; ctx.lineWidth=1.4;
       return;
     }
     const isRise=rise&&rise.riseIdx.includes(i);
-    ctx.beginPath(); ctx.arc(x,y,3,0,7);
-    ctx.fillStyle=isRise?C.rose:C.line; ctx.fill();
+    ctx.beginPath(); ctx.arc(x,y,3.2,0,7);
+    ctx.fillStyle=isRise?C.rose:C.dot; ctx.fill();
     if(isRise){ ctx.fillStyle=C.rose; ctx.font='10px sans-serif'; ctx.textAlign='center';
       ctx.fillText('▲',x,y-7); ctx.textAlign='left'; }
   });
