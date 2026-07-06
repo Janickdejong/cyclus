@@ -407,6 +407,8 @@
       <span></span><button class="pinkey" data-n="0">0</button><button class="pinkey" data-del="1">⌫</button>
     </div>
     <p id="pinError" style="font-size:0.82rem; color:#FFD5D5; margin-top:16px; min-height:18px;"></p>
+    <button id="pinForgot" style="margin-top:8px; background:none; border:none; color:rgba(255,255,255,0.75);
+      font-size:0.82rem; text-decoration:underline; cursor:pointer;">Pincode vergeten?</button>
   </div>
 </div>
 
@@ -2267,6 +2269,7 @@ function openPinUnlock(onSuccess){
   document.getElementById('pinTitle').textContent='Voer je pincode in';
   document.getElementById('pinSub').textContent='Cycluss is beveiligd met een pincode.';
   document.getElementById('pinError').textContent='';
+  document.getElementById('pinForgot').style.display=''; // vergeten-knop tonen
   updatePinDots();
   document.getElementById('pinOverlay').style.display='flex';
 }
@@ -2275,6 +2278,7 @@ function openPinSet(){
   document.getElementById('pinTitle').textContent='Kies een nieuwe pincode';
   document.getElementById('pinSub').textContent='Voer 4 cijfers in.';
   document.getElementById('pinError').textContent='';
+  document.getElementById('pinForgot').style.display='none'; // niet bij instellen
   updatePinDots();
   document.getElementById('pinOverlay').style.display='flex';
 }
@@ -2319,35 +2323,54 @@ document.querySelectorAll('.pinkey').forEach(btn=>{
     else pinAddDigit(btn.dataset.n);
   });
 });
+document.getElementById('pinForgot').addEventListener('click', async ()=>{
+  if(!confirm('Wil je uitloggen? Je pincode wordt gewist. Je logt daarna opnieuw in met je e-mailadres en wachtwoord, en al je gegevens komen terug uit de cloud.')) return;
+  setPin(null); // pincode wissen
+  document.getElementById('pinOverlay').style.display='none';
+  if(sb) await sb.auth.signOut();
+  currentUser=null;
+  authOverlay.classList.remove('hidden');
+  const ae=document.getElementById('authEmail'); if(ae) ae.value='';
+  const ap=document.getElementById('authPass'); if(ap) ap.value='';
+  if(typeof setAuthMsg==='function') setAuthMsg('Log opnieuw in om verder te gaan.');
+});
 
 async function startApp(){
-  // Pincode-slot: als er een pincode is ingesteld, eerst ontgrendelen
-  if(hasPinSet()){
-    authOverlay.classList.add('hidden');
-    openPinUnlock(()=>{ startAppInner(); });
-    return;
-  }
-  await startAppInner();
-}
-async function startAppInner(){
+  // 1. Data eerst laden (nodig voor het ochtendscherm), overlay blijft nog even
   authOverlay.classList.add('hidden');
   await loadData();
-  renderVandaag();
-  goTab('vandaag'); // altijd starten op Vandaag (met begroeting/bijbeltekst)
-  scheduleDailyReminder();
-  // Snel ochtendscherm tonen als vandaag nog geen temperatuur is ingevuld
-  try{
-    const cycle=currentCycle();
-    const vandaagDag = cycle && cycle.days.find(d => d.date === todayISO());
-    const heeftTemp = vandaagDag && vandaagDag.temp;
-    if(!heeftTemp){
-      showOchtendPopup();
+
+  // 2. Ochtendscherm vóór de pincode (max gemak bij wazig wakker worden)
+  const cycle=currentCycle();
+  const vandaagDag = cycle && cycle.days.find(d => d.date === todayISO());
+  const heeftTemp = vandaagDag && vandaagDag.temp;
+
+  const naOchtend = ()=>{
+    // 3. Pincode ná het ochtendscherm (als ingesteld)
+    if(hasPinSet()){
+      openPinUnlock(()=>{ revealApp(); });
+    } else {
+      revealApp();
     }
-  }catch(e){}
+  };
+
+  if(!heeftTemp){
+    // toon ochtendscherm; na opslaan/overslaan volgt de pincode
+    showOchtendPopup(naOchtend);
+  } else {
+    naOchtend();
+  }
+}
+function revealApp(){
+  renderVandaag();
+  goTab('vandaag');
+  scheduleDailyReminder();
 }
 
 /* ---- Snel ochtend-temperatuurscherm ---- */
-function showOchtendPopup(){
+let _ochtendCallback=null;
+function showOchtendPopup(onDone){
+  _ochtendCallback = onDone || null;
   const now=new Date();
   const hh=String(now.getHours()).padStart(2,'0'), mm=String(now.getMinutes()).padStart(2,'0');
   document.getElementById('ochtendTijd').textContent=`${hh}:${mm}`;
@@ -2359,9 +2382,15 @@ function showOchtendPopup(){
   document.getElementById('ochtendPopup').style.display='flex';
   setTimeout(()=>document.getElementById('ochtendTemp').focus(), 200);
 }
+function closeOchtend(){
+  document.getElementById('ochtendPopup').style.display='none';
+  const cb=_ochtendCallback; _ochtendCallback=null;
+  if(cb) cb();
+  else { renderVandaag(); goTab('vandaag'); } // losse aanroep (niet vanuit opstart)
+}
 async function saveOchtendTemp(){
   const temp=document.getElementById('ochtendTemp').value.trim();
-  if(!temp){ document.getElementById('ochtendPopup').style.display='none'; return; }
+  if(!temp){ closeOchtend(); return; }
   const now=new Date();
   const meettijd=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
   const cycle=currentCycle();
@@ -2376,9 +2405,7 @@ async function saveOchtendTemp(){
     cycle.days.sort((a,b)=>a.date<b.date?-1:1);
   }
   await saveData();
-  document.getElementById('ochtendPopup').style.display='none';
-  renderVandaag();
-  goTab('vandaag');
+  closeOchtend();
 }
 document.getElementById('ochtendOpslaan').addEventListener('click', saveOchtendTemp);
 document.getElementById('ochtendGestoord').addEventListener('click', ()=>{
@@ -2390,9 +2417,7 @@ document.getElementById('ochtendGestoord').addEventListener('click', ()=>{
     gb.style.background='transparent'; gb.textContent='⚠️ Meting was gestoord (gebroken nacht, laat...)';
   }
 });
-document.getElementById('ochtendLater').addEventListener('click', ()=>{
-  document.getElementById('ochtendPopup').style.display='none';
-});
+document.getElementById('ochtendLater').addEventListener('click', ()=>{ closeOchtend(); });
 document.getElementById('ochtendTemp').addEventListener('keydown',(e)=>{
   if(e.key==='Enter') saveOchtendTemp();
 });
