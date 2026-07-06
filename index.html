@@ -206,9 +206,12 @@
   .mday.empty{background:transparent;}
   .mday.bloeding{background:linear-gradient(145deg,#C0505F,#9E3348); color:#fff; font-weight:600;}
   .mday.vrucht{background:#F6C9A8; color:#8A4B24; font-weight:600;}
-  body.dark .mday.vrucht{background:#7A4A2E; color:#F6C9A8;}
   .mday.onvrucht{background:#CFE4D3; color:#375A40; font-weight:600;}
-  body.dark .mday.onvrucht{background:#2F4536; color:#A8C9B0;}
+  /* Nachtmodus: donkere vlakken met gekleurde rand + heldere tekst (subtiel, rustig voor de ogen) */
+  body.dark .mday{background:#241B28; color:#8A7A84;}
+  body.dark .mday.bloeding{background:rgba(224,122,138,0.14); border:1.5px solid #E07A8A; color:#F0A5B0; font-weight:600;}
+  body.dark .mday.vrucht{background:rgba(240,180,140,0.12); border:1.5px solid #E0A878; color:#F0C09A; font-weight:600;}
+  body.dark .mday.onvrucht{background:rgba(140,190,150,0.12); border:1.5px solid #7FB58C; color:#A8D0B2; font-weight:600;}
   .mday.pred{border:1.5px dashed var(--rose); background:transparent; color:var(--rose);}
   .mday.today{box-shadow:0 0 0 2px var(--surface), 0 0 0 4px var(--plum-dark);}
   .sex-dot{position:absolute; bottom:2px; right:3px; font-size:0.55rem; color:#C0392B; line-height:1;}
@@ -216,7 +219,9 @@
   .aleg{width:12px; height:12px; border-radius:5px; display:inline-block; vertical-align:-2px; margin-right:4px;}
   .bloed-dot{background:linear-gradient(145deg,#C0505F,#9E3348);}
   .fert-dot{background:#F6C9A8;} .onvr-dot{background:#CFE4D3;}
-  body.dark .fert-dot{background:#7A4A2E;} body.dark .onvr-dot{background:#2F4536;}
+  body.dark .bloed-dot{background:rgba(224,122,138,0.14); border:1.5px solid #E07A8A;}
+  body.dark .fert-dot{background:rgba(240,180,140,0.12); border:1.5px solid #E0A878;}
+  body.dark .onvr-dot{background:rgba(140,190,150,0.12); border:1.5px solid #7FB58C;}
   .pred-dot{border:1.5px dashed var(--rose);}
   /* Login-overlay */
   #authOverlay{position:fixed; inset:0; background:var(--bg); z-index:100;
