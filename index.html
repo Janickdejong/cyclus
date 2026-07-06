@@ -75,6 +75,13 @@
   .form-sec{font-size:0.82rem; font-weight:700; color:var(--plum-dark); margin:20px 0 8px;
     padding-top:14px; border-top:1px solid var(--line); letter-spacing:0.2px;}
   .form-sec:first-of-type{border-top:none; padding-top:0; margin-top:16px;}
+  .pinkey{width:64px; height:64px; border-radius:50%; border:1px solid rgba(255,255,255,0.35);
+    background:rgba(255,255,255,0.1); color:#fff; font-size:1.4rem; font-family:'Fraunces',serif;
+    cursor:pointer; margin:0 auto; transition:background .1s;}
+  .pinkey:active{background:rgba(255,255,255,0.3);}
+  .pindot{width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,0.6);
+    display:inline-block; transition:background .1s;}
+  .pindot.filled{background:#fff;}
   button.primary{width:100%; margin-top:14px; padding:14px; border:none; border-radius:14px;
     background:linear-gradient(135deg,var(--plum),var(--plum-dark)); color:#fff;
     font-size:0.95rem; font-weight:600; cursor:pointer; letter-spacing:0.3px;
@@ -318,6 +325,16 @@
       </div>
     </div>
 
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <div class="toggle-row" style="padding:0;">
+        <span>🔒 Pincodevergrendeling</span>
+        <label class="switch"><input type="checkbox" id="pinToggle"><span class="slider"></span></label>
+      </div>
+      <p class="muted" style="font-size:0.76rem; margin:6px 0 0; line-height:1.5;">
+        Vraagt een 4-cijferige pincode bij het openen van de app.</p>
+      <button class="secondary" id="pinChangeBtn" style="margin-top:10px; display:none;">Pincode wijzigen</button>
+    </div>
+
     <button class="secondary" id="settingsClose" style="margin-top:10px;">Sluiten</button>
   </div>
 </div>
@@ -370,6 +387,26 @@
     <button id="ochtendLater" style="width:100%; margin-top:10px; padding:10px; border:none;
       border-radius:14px; background:transparent; color:rgba(255,255,255,0.75); font-size:0.85rem; cursor:pointer;">
       Later invullen</button>
+  </div>
+</div>
+
+<!-- Pincode-slot -->
+<div id="pinOverlay" style="display:none; position:fixed; inset:0; z-index:120;
+  background:linear-gradient(160deg,var(--plum),var(--plum-dark)); align-items:center; justify-content:center; padding:24px;">
+  <div style="width:100%; max-width:320px; text-align:center; color:#fff;">
+    <div style="font-size:2rem; margin-bottom:8px;">🔒</div>
+    <h2 id="pinTitle" style="font-family:'Fraunces',Georgia,serif; font-size:1.4rem; font-weight:600; margin:0 0 4px; color:#fff;">Voer je pincode in</h2>
+    <p id="pinSub" style="font-size:0.85rem; opacity:0.8; margin:0 0 20px;">Cycluss is beveiligd met een pincode.</p>
+    <div id="pinDots" style="display:flex; gap:12px; justify-content:center; margin-bottom:22px;">
+      <span class="pindot"></span><span class="pindot"></span><span class="pindot"></span><span class="pindot"></span>
+    </div>
+    <div id="pinPad" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:240px; margin:0 auto;">
+      <button class="pinkey" data-n="1">1</button><button class="pinkey" data-n="2">2</button><button class="pinkey" data-n="3">3</button>
+      <button class="pinkey" data-n="4">4</button><button class="pinkey" data-n="5">5</button><button class="pinkey" data-n="6">6</button>
+      <button class="pinkey" data-n="7">7</button><button class="pinkey" data-n="8">8</button><button class="pinkey" data-n="9">9</button>
+      <span></span><button class="pinkey" data-n="0">0</button><button class="pinkey" data-del="1">⌫</button>
+    </div>
+    <p id="pinError" style="font-size:0.82rem; color:#FFD5D5; margin-top:16px; min-height:18px;"></p>
   </div>
 </div>
 
@@ -957,16 +994,18 @@ function renderVandaag(editIdx=null){
   const forceNew = editIdx==='new' || editIdx==='bare';
   const bare = editIdx==='bare'; // kaal formulier zonder begroeting
   if(forceNew) editIdx=null;
-  const editing = editIdx!==null;
-  const day = editing? cycle.days[editIdx] : null;
+  const editingInit = editIdx!==null;
   const today = todayISO();
 
   // Check: is vandaag al ingevuld?
-  const todayIdx = (!editing && !forceNew)? cycle.days.findIndex(d=>d.date===today) : -1;
-  const todayAlreadyFilled = todayIdx !== -1;
+  const todayIdx = (!editingInit && !forceNew)? cycle.days.findIndex(d=>d.date===today) : -1;
+  const todayDay = todayIdx!==-1 ? cycle.days[todayIdx] : null;
+  // "compleet" = meer dan alleen temperatuur (dus ook slijm, bloeding of notitie)
+  const todayCompleet = todayDay && (todayDay.cervixAfk || todayDay.ervaren ||
+    todayDay.bloeding || (todayDay.extra && todayDay.extra.length) || (todayDay.note && todayDay.note.length));
 
-  // Als vandaag al ingevuld is én niet aan het bewerken: toon status + knop ipv leeg formulier
-  if(todayAlreadyFilled && !editing){
+  // Alleen "al ingevuld"-overzicht tonen als de dag compleet is
+  if(todayCompleet && !editingInit){
     const status = computeStatus(cycle);
     document.getElementById('headerSub').textContent = `Cyclus ${cycle.nummer} · dag ${cycle.days.length}`;
     const pred = computePrediction();
@@ -989,23 +1028,38 @@ function renderVandaag(editIdx=null){
     return;
   }
 
-  const dayNum = editing? editIdx+1 : cycle.days.length+1;
-  const suggestedDate = editing? day.date :
+  // Als vandaag alleen temperatuur heeft (ochtendmeting), open dan het formulier
+  // vooringevuld op die dag, zodat de rest makkelijk aangevuld kan worden.
+  let prefillToday = false;
+  if(todayDay && !todayCompleet && !editingInit && !forceNew){
+    editIdx = todayIdx;
+    prefillToday = true;
+  }
+  // herbereken na mogelijke aanpassing
+  const editingNow = editIdx!==null;
+  const dayNow = editingNow ? cycle.days[editIdx] : null;
+  // bij prefill tonen we het als "vandaag invullen" mét begroeting, niet als kale edit
+  const showAsEdit = editingNow && !prefillToday;
+
+  const dayNum = editingNow? editIdx+1 : cycle.days.length+1;
+  const suggestedDate = editingNow? dayNow.date :
     (cycle.days.length? addDays(cycle.days[cycle.days.length-1].date,1) : cycle.startDate);
+  const day = dayNow;
+  const editing = editingNow;
   const status = computeStatus(cycle);
   document.getElementById('headerSub').textContent =
     `Cyclus ${cycle.nummer} · dag ${cycle.days.length}`;
 
   const el=document.getElementById('tab-vandaag');
-  const pred = editing? null : computePrediction();
+  const pred = (editing && !prefillToday)? null : computePrediction();
   const predHtml = predictionCardHtml(pred);
   el.innerHTML = `
   ${bare? `<div class="card" style="display:flex; justify-content:space-between; align-items:center; padding:13px 16px;">
     <span style="font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.08rem; font-weight:600;">Dag invullen</span>
     <button class="secondary" id="bareBackBtn" style="margin:0; width:auto; padding:6px 14px;">← Terug</button>
   </div>` : ''}
-  ${bare? '' : (!editing? greetingCardHtml(cycle) : '')}
-  ${(!bare && editing)? `<div class="status-hero ${status.cls}">
+  ${bare? '' : ((!showAsEdit)? greetingCardHtml(cycle) : '')}
+  ${(!bare && showAsEdit)? `<div class="status-hero ${status.cls}">
     <div class="big">${status.label}</div>
     <div class="why">${status.why}</div>
   </div>` : ''}
@@ -1453,9 +1507,28 @@ function openSettings(){
   document.getElementById('setMailEmail').textContent=currentUser?currentUser.email:'—';
   const mp=document.getElementById('modePostPil'); if(mp) mp.checked=localStorage.getItem('cyclus_mode_postpil')==='1';
   const mb=document.getElementById('modeBorstvoeding'); if(mb) mb.checked=localStorage.getItem('cyclus_mode_borstvoeding')==='1';
+  const pt=document.getElementById('pinToggle'); if(pt) pt.checked=hasPinSet();
+  const pc=document.getElementById('pinChangeBtn'); if(pc) pc.style.display=hasPinSet()?'':'none';
   updateReminderStatus();
   p.style.display='flex';
 }
+document.getElementById('pinToggle').addEventListener('change',(e)=>{
+  if(e.target.checked){
+    document.getElementById('settingsPopup').style.display='none';
+    openPinSet();
+  } else {
+    if(confirm('Pincodevergrendeling uitschakelen?')){
+      setPin(null);
+      document.getElementById('pinChangeBtn').style.display='none';
+    } else {
+      e.target.checked=true;
+    }
+  }
+});
+document.getElementById('pinChangeBtn').addEventListener('click',()=>{
+  document.getElementById('settingsPopup').style.display='none';
+  openPinSet();
+});
 function updateReminderStatus(){
   const el=document.getElementById('setReminderStatus'); if(!el) return;
   if(!('Notification' in window)){ el.textContent='Meldingen worden niet ondersteund op dit toestel.'; return; }
@@ -1941,9 +2014,10 @@ function drawExportCanvas(cycle){
               ctx.fillText(et.slice(0,20),0,0); ctx.restore(); } }
           break;
         case 'uiterlijk':
-          if(d.uiterlijk){ ctx.save(); ctx.translate(cx+3,y0+row.h-4); ctx.rotate(-Math.PI/2);
-            ctx.font='7.5px sans-serif'; ctx.textAlign='left'; ctx.fillStyle='#2E2430';
-            ctx.fillText(d.uiterlijk.slice(0,20),0,0); ctx.restore(); }
+          { const ut=uiterlijkText(d);
+            if(ut){ ctx.save(); ctx.translate(cx+3,y0+row.h-4); ctx.rotate(-Math.PI/2);
+              ctx.font='7.5px sans-serif'; ctx.textAlign='left'; ctx.fillStyle='#2E2430';
+              ctx.fillText(ut.slice(0,20),0,0); ctx.restore(); } }
           break;
         case 'bmh':
           if(d.bmOpening){ const sym=d.bmOpening==='gesloten'?'●':(d.bmOpening==='deels'?'○':'◯');
@@ -2167,7 +2241,95 @@ document.getElementById('logoutBtn').addEventListener('click', async ()=>{
 });
 
 /* ---- App starten na login ---- */
+/* ---- Pincode-beveiliging ---- */
+function pinHash(pin){
+  // simpele hash (geen zware beveiliging, maar houdt de pin uit het zicht)
+  let h=5381; const s='cycluss:'+pin;
+  for(let i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; }
+  return String(h);
+}
+function getPinHash(){ return localStorage.getItem('cyclus_pin'); }
+function setPin(pin){ if(pin) localStorage.setItem('cyclus_pin', pinHash(pin)); else localStorage.removeItem('cyclus_pin'); }
+function hasPinSet(){ return !!getPinHash(); }
+
+let _pinBuffer='';
+let _pinMode='unlock'; // 'unlock' | 'set-new' | 'set-confirm'
+let _pinFirstEntry='';
+let _pinOnSuccess=null;
+
+function updatePinDots(){
+  document.querySelectorAll('#pinDots .pindot').forEach((dot,i)=>{
+    dot.classList.toggle('filled', i<_pinBuffer.length);
+  });
+}
+function openPinUnlock(onSuccess){
+  _pinMode='unlock'; _pinBuffer=''; _pinOnSuccess=onSuccess;
+  document.getElementById('pinTitle').textContent='Voer je pincode in';
+  document.getElementById('pinSub').textContent='Cycluss is beveiligd met een pincode.';
+  document.getElementById('pinError').textContent='';
+  updatePinDots();
+  document.getElementById('pinOverlay').style.display='flex';
+}
+function openPinSet(){
+  _pinMode='set-new'; _pinBuffer=''; _pinFirstEntry='';
+  document.getElementById('pinTitle').textContent='Kies een nieuwe pincode';
+  document.getElementById('pinSub').textContent='Voer 4 cijfers in.';
+  document.getElementById('pinError').textContent='';
+  updatePinDots();
+  document.getElementById('pinOverlay').style.display='flex';
+}
+function pinAddDigit(n){
+  if(_pinBuffer.length>=4) return;
+  _pinBuffer+=n; updatePinDots();
+  if(_pinBuffer.length===4) setTimeout(pinComplete, 150);
+}
+function pinDelete(){ _pinBuffer=_pinBuffer.slice(0,-1); updatePinDots(); }
+function pinComplete(){
+  const err=document.getElementById('pinError');
+  if(_pinMode==='unlock'){
+    if(pinHash(_pinBuffer)===getPinHash()){
+      document.getElementById('pinOverlay').style.display='none';
+      if(_pinOnSuccess) _pinOnSuccess();
+    } else {
+      err.textContent='Onjuiste pincode. Probeer opnieuw.';
+      _pinBuffer=''; updatePinDots();
+    }
+  } else if(_pinMode==='set-new'){
+    _pinFirstEntry=_pinBuffer; _pinBuffer=''; _pinMode='set-confirm';
+    document.getElementById('pinTitle').textContent='Bevestig je pincode';
+    document.getElementById('pinSub').textContent='Voer dezelfde 4 cijfers nog eens in.';
+    updatePinDots();
+  } else if(_pinMode==='set-confirm'){
+    if(_pinBuffer===_pinFirstEntry){
+      setPin(_pinBuffer);
+      document.getElementById('pinOverlay').style.display='none';
+      alert('Pincode ingesteld.');
+    } else {
+      err.textContent='De codes komen niet overeen. Opnieuw.';
+      _pinBuffer=''; _pinFirstEntry=''; _pinMode='set-new';
+      document.getElementById('pinTitle').textContent='Kies een nieuwe pincode';
+      document.getElementById('pinSub').textContent='Voer 4 cijfers in.';
+      updatePinDots();
+    }
+  }
+}
+document.querySelectorAll('.pinkey').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(btn.dataset.del) pinDelete();
+    else pinAddDigit(btn.dataset.n);
+  });
+});
+
 async function startApp(){
+  // Pincode-slot: als er een pincode is ingesteld, eerst ontgrendelen
+  if(hasPinSet()){
+    authOverlay.classList.add('hidden');
+    openPinUnlock(()=>{ startAppInner(); });
+    return;
+  }
+  await startAppInner();
+}
+async function startAppInner(){
   authOverlay.classList.add('hidden');
   await loadData();
   renderVandaag();
