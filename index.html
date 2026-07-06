@@ -326,6 +326,16 @@
     </div>
 
     <div style="border-bottom:1px solid var(--line); padding:14px 0;">
+      <span style="font-weight:600; font-size:0.9rem;">💾 Back-up van je gegevens</span>
+      <p class="muted" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;">
+        Sla al je cyclusgegevens op als bestand op je telefoon. Zo heb je altijd een eigen kopie,
+        los van de cloud.</p>
+      <button class="secondary" id="exportDataBtn" style="margin:0;">Download back-up</button>
+      <button class="secondary" id="importDataBtn" style="margin-top:8px;">Back-up terugzetten</button>
+      <input type="file" id="importDataFile" accept="application/json" style="display:none;">
+    </div>
+
+    <div style="border-bottom:1px solid var(--line); padding:14px 0;">
       <div class="toggle-row" style="padding:0;">
         <span>🔒 Pincodevergrendeling</span>
         <label class="switch"><input type="checkbox" id="pinToggle"><span class="slider"></span></label>
@@ -431,8 +441,6 @@
   <div class="card" style="padding:10px;">
     <div class="kaart-outer" id="kaartOuter"></div>
     <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--line);">
-      <div style="font-size:0.72rem; color:var(--text-soft); margin-bottom:8px; font-weight:600;">
-        📖 Legenda</div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; font-size:0.74rem;">
         <div style="display:flex; align-items:center; gap:7px;">
           <span style="display:inline-block; width:18px; text-align:center; color:#B8860B; font-size:1rem;">◯</span>
@@ -498,15 +506,33 @@
 
 <section id="tab-voorbeeld">
   <div class="card">
-    <h2>&#129514; Voorbeeldcyclus</h2>
+    <h2>&#129514; Voorbeeld</h2>
     <p class="note" style="font-size:0.84rem;">Dit is een voorbeeld ter uitleg &mdash; het staat los van jouw eigen
-    gegevens. Zo ziet een volle kaart eruit met een stijging, een piekdag en de vruchtbare dagen.</p>
+    gegevens. Zo zien twee volle cycli, de agenda en de kaarten eruit.</p>
     <button class="secondary" id="backToInfoBtn">&larr; Terug naar Uitleg</button>
   </div>
+
+  <div class="card">
+    <h2>📅 Agenda-voorbeeld</h2>
+    <div class="legend" style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.74rem; color:var(--text-soft); margin:6px 0 12px; justify-content:center;">
+      <span><span class="aleg bloed-dot"></span> bloeding</span>
+      <span><span class="aleg fert-dot"></span> vruchtbaar</span>
+      <span><span class="aleg onvr-dot"></span> onvruchtbaar</span>
+      <span><span style="color:#C0392B; margin-right:3px;">♥</span> gemeenschap</span>
+    </div>
+    <div id="voorbeeldAgenda"></div>
+  </div>
+
   <div class="card">
     <h2 id="voorbeeldTitle">Cycluskaart</h2>
     <div id="voorbeeldInterpretationBox" class="note" style="font-size:0.84rem;"></div>
     <div class="kaart-outer" id="voorbeeldKaartOuter"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="voorbeeldTitle2">Cycluskaart 2</h2>
+    <div id="voorbeeldInterpretationBox2" class="note" style="font-size:0.84rem;"></div>
+    <div class="kaart-outer" id="voorbeeldKaartOuter2"></div>
   </div>
 </section>
 
@@ -776,20 +802,38 @@ let currentCycleId = null;
 
 function localKey(){ return currentUser ? 'sensiplan_data_'+currentUser.id : 'sensiplan_data'; }
 
+function countDataPoints(data){
+  // telt het totaal aantal ingevulde dagen over alle cycli (maat voor 'hoeveel data')
+  if(!data || !data.cycles) return 0;
+  return data.cycles.reduce((sum,c)=> sum + (c.days? c.days.length : 0), 0);
+}
 async function loadData(){
   // 1. eerst lokaal (snel, werkt offline)
-  DATA = { cycles: [] };
+  let lokaal = { cycles: [] };
   try{
     const raw = localStorage.getItem(localKey());
-    if(raw) DATA = JSON.parse(raw);
-  }catch(e){ DATA = { cycles: [] }; }
-  // 2. dan cloud ophalen (indien ingelogd) en gebruiken als die nieuwer/gevuld is
+    if(raw) lokaal = JSON.parse(raw);
+  }catch(e){ lokaal = { cycles: [] }; }
+  DATA = lokaal;
+  // 2. dan cloud ophalen (indien ingelogd)
   if(sb && currentUser){
     try{
       const { data, error } = await sb.from('cyclusdata').select('data').eq('user_id', currentUser.id).maybeSingle();
       if(!error && data && data.data && data.data.cycles){
-        DATA = data.data;
-        localStorage.setItem(localKey(), JSON.stringify(DATA));
+        const cloud = data.data;
+        const cloudPunten = countDataPoints(cloud);
+        const lokaalPunten = countDataPoints(lokaal);
+        // VEILIGHEID: gebruik de cloud alleen als die minstens evenveel data heeft.
+        // Zo overschrijft een hapering (leeg/half cloud-antwoord) nooit volledige lokale data.
+        if(cloudPunten >= lokaalPunten){
+          DATA = cloud;
+          localStorage.setItem(localKey(), JSON.stringify(DATA));
+        } else {
+          // lokaal heeft méér: behoud lokaal en duw het terug naar de cloud
+          console.warn('Lokale data heeft meer dagen dan cloud; lokaal behouden en terugschrijven.');
+          DATA = lokaal;
+          try{ await sb.from('cyclusdata').upsert({ user_id: currentUser.id, data: DATA, updated_at: new Date().toISOString() }); }catch(e){}
+        }
       }
     }catch(e){ console.warn('Cloud laden mislukt, lokale data gebruikt', e); }
   }
@@ -1531,6 +1575,40 @@ document.getElementById('pinChangeBtn').addEventListener('click',()=>{
   document.getElementById('settingsPopup').style.display='none';
   openPinSet();
 });
+document.getElementById('exportDataBtn').addEventListener('click',()=>{
+  try{
+    const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='cycluss-backup-'+todayISO()+'.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 1000);
+  }catch(e){ alert('Back-up maken mislukt: '+e.message); }
+});
+document.getElementById('importDataBtn').addEventListener('click',()=>{
+  document.getElementById('importDataFile').click();
+});
+document.getElementById('importDataFile').addEventListener('change',(e)=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ()=>{
+    try{
+      const imported=JSON.parse(reader.result);
+      if(!imported || !imported.cycles) throw new Error('Dit lijkt geen geldig back-upbestand.');
+      const huidigPunten=countDataPoints(DATA);
+      const importPunten=countDataPoints(imported);
+      if(!confirm(`Back-up terugzetten?\n\nHuidige gegevens: ${huidigPunten} dagen\nBack-up: ${importPunten} dagen\n\nJe huidige gegevens worden vervangen door de back-up.`)) return;
+      DATA=imported;
+      if(!DATA.cycles) DATA.cycles=[];
+      currentCycleId=DATA.cycles.length? DATA.cycles[DATA.cycles.length-1].id : null;
+      await saveData();
+      alert('Back-up teruggezet.');
+      document.getElementById('settingsPopup').style.display='none';
+      renderVandaag(); goTab('vandaag');
+    }catch(err){ alert('Terugzetten mislukt: '+err.message); }
+  };
+  reader.readAsText(file);
+});
 function updateReminderStatus(){
   const el=document.getElementById('setReminderStatus'); if(!el) return;
   if(!('Notification' in window)){ el.textContent='Meldingen worden niet ondersteund op dit toestel.'; return; }
@@ -2153,12 +2231,7 @@ function makeDemoCycle(nummer, startISO){
   return { id:'demo'+nummer+'_'+Date.now(), nummer, startDate:startISO, days };
 }
 /* ---- Voorbeeldpagina (los van eigen data, raakt DATA nooit aan) ---- */
-function renderVoorbeeld(){
-  const demo = makeDemoCycle(1, '2026-05-01');
-  document.getElementById('voorbeeldTitle').textContent =
-    `Cycluskaart — voorbeeld (start ${fmtDate(demo.startDate)})`;
-
-  const box=document.getElementById('voorbeeldInterpretationBox');
+function interpretatieHtml(demo){
   const start=computeCycleStartInfertile(demo);
   const end=computeInfertileAfterOvulation(demo);
   let h='';
@@ -2167,9 +2240,68 @@ function renderVoorbeeld(){
   if(end.peak) h+=`<p style="margin:4px 0;"><b>Piekdag:</b> dag ${end.peak.index+1} → P+3 = avond dag ${end.peak.index+4}.</p>`;
   if(end.combined!==null)
     h+=`<p style="margin:6px 0;"><b style="color:var(--sage-dark);">Onvruchtbaar vanaf avond dag ${end.combined+1}</b> (${end.basis}).</p>`;
-  box.innerHTML=h;
+  return h;
+}
+function buildVoorbeeldAgenda(cycli){
+  // bouw een status-map alleen uit de demo-cycli (raakt DATA niet aan)
+  const map={}; const sexDays=new Set();
+  for(const c of cycli){
+    const start=computeCycleStartInfertile(c);
+    const end=computeInfertileAfterOvulation(c);
+    c.days.forEach((d,i)=>{
+      if(d.extra && d.extra.includes('X')) sexDays.add(d.date);
+      let st='onvrucht';
+      const f=dayFertility(i,start,end,d);
+      if(f==='v'||f==='v/') st='vrucht';
+      if(d.bloeding) st='bloeding';
+      map[d.date]=st;
+    });
+  }
+  // toon de maand(en) waarin de demo valt
+  const dates=Object.keys(map).sort();
+  if(dates.length===0) return '';
+  const first=new Date(dates[0]+'T00:00:00');
+  const last=new Date(dates[dates.length-1]+'T00:00:00');
+  const months=[];
+  let cur=new Date(first.getFullYear(), first.getMonth(), 1);
+  const endM=new Date(last.getFullYear(), last.getMonth(), 1);
+  while(cur<=endM){ months.push(new Date(cur)); cur.setMonth(cur.getMonth()+1); }
+  const dows=['ma','di','wo','do','vr','za','zo'];
+  let html='';
+  for(const m of months){
+    const y=m.getFullYear(), mo=m.getMonth();
+    const monthName=m.toLocaleDateString('nl-NL',{month:'long',year:'numeric'});
+    const firstDow=(new Date(y,mo,1).getDay()+6)%7;
+    const daysInMonth=new Date(y,mo+1,0).getDate();
+    html+=`<div class="month-block"><div class="month-title">${monthName.charAt(0).toUpperCase()+monthName.slice(1)}</div><div class="month-grid">`;
+    html+=dows.map(d=>`<div class="dow">${d}</div>`).join('');
+    for(let i=0;i<firstDow;i++) html+=`<div class="mday empty"></div>`;
+    for(let d=1;d<=daysInMonth;d++){
+      const iso=`${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const st=map[iso]||'';
+      const sexMark=sexDays.has(iso)?`<span class="sex-dot">♥</span>`:'';
+      html+=`<div class="mday ${st}">${d}${sexMark}</div>`;
+    }
+    html+=`</div></div>`;
+  }
+  return html;
+}
+function renderVoorbeeld(){
+  const demo1 = makeDemoCycle(1, '2026-05-01');
+  const demo2 = makeDemoCycle(2, addDays('2026-05-01',29));
+  demo2.days = demo2.days.slice(0,20); // tweede cyclus loopt nog
 
-  buildKaartInto('voorbeeldKaartOuter', demo);
+  document.getElementById('voorbeeldTitle').textContent =
+    `Cycluskaart 1 — voorbeeld (start ${fmtDate(demo1.startDate)})`;
+  document.getElementById('voorbeeldInterpretationBox').innerHTML = interpretatieHtml(demo1);
+  buildKaartInto('voorbeeldKaartOuter', demo1);
+
+  document.getElementById('voorbeeldTitle2').textContent =
+    `Cycluskaart 2 — voorbeeld (start ${fmtDate(demo2.startDate)})`;
+  document.getElementById('voorbeeldInterpretationBox2').innerHTML = interpretatieHtml(demo2);
+  buildKaartInto('voorbeeldKaartOuter2', demo2);
+
+  document.getElementById('voorbeeldAgenda').innerHTML = buildVoorbeeldAgenda([demo1, demo2]);
 }
 document.getElementById('showVoorbeeldBtn').addEventListener('click', ()=>{
   document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
