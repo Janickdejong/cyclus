@@ -75,6 +75,8 @@
   .form-sec{font-size:0.82rem; font-weight:700; color:var(--plum-dark); margin:20px 0 8px;
     padding-top:14px; border-top:1px solid var(--line); letter-spacing:0.2px;}
   .form-sec:first-of-type{border-top:none; padding-top:0; margin-top:16px;}
+  /* Emoji-iconen gedempt zodat ze niet fel afsteken tegen het warme palet */
+  .emoji{filter:grayscale(0.55) opacity(0.75); font-size:0.92em; margin-right:2px;}
   .pinkey{width:64px; height:64px; border-radius:50%; border:1px solid rgba(255,255,255,0.35);
     background:rgba(255,255,255,0.1); color:#fff; font-size:1.4rem; font-family:'Fraunces',serif;
     cursor:pointer; margin:0 auto; transition:background .1s;}
@@ -288,7 +290,7 @@
     <h2 style="margin:0 0 16px; font-family:'Fraunces',Georgia,serif; color:var(--plum-dark); font-size:1.15rem;">⚙️ Instellingen</h2>
 
     <div class="toggle-row" style="border-bottom:1px solid var(--line); padding-bottom:12px;">
-      <span>🌙 Donkere modus</span>
+      <span><span class="emoji">🌙</span> Donkere modus</span>
       <label class="switch"><input type="checkbox" id="darkToggle"><span class="slider"></span></label>
     </div>
 
@@ -310,7 +312,7 @@
     </div>
 
     <div style="padding:14px 0;">
-      <span style="font-weight:600; font-size:0.9rem;">✉️ Cyclus mailen</span>
+      <span style="font-weight:600; font-size:0.9rem;"><span class="emoji">✉️</span> Cyclus mailen</span>
       <p class="muted" style="font-size:0.78rem; margin:6px 0 10px; line-height:1.5;">
         Stuur de ingevulde cycluskaart als PDF naar <b id="setMailEmail"></b>.
         Handig als back-up of voor een arts.</p>
@@ -318,22 +320,22 @@
     </div>
 
     <div style="border-bottom:1px solid var(--line); padding:14px 0;">
-      <span style="font-weight:600; font-size:0.9rem;">🌸 Bijzondere fase</span>
+      <span style="font-weight:600; font-size:0.9rem;"><span class="emoji">🌸</span> Bijzondere fase</span>
       <p class="muted" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;">
         In deze fases zijn de gewone regels niet betrouwbaar. De app zet dan de automatische
         vruchtbaar/onvruchtbaar-conclusie uit en toont de juiste uitleg. Beoordeel zelf of met een consulent.</p>
       <div class="toggle-row" style="padding:4px 0;">
-        <span>💊 Na de pil (post-hormonaal)</span>
+        <span><span class="emoji">💊</span> Na de pil (post-hormonaal)</span>
         <label class="switch"><input type="checkbox" id="modePostPil"><span class="slider"></span></label>
       </div>
       <div class="toggle-row" style="padding:4px 0;">
-        <span>🤱 Borstvoeding</span>
+        <span><span class="emoji">🤱</span> Borstvoeding</span>
         <label class="switch"><input type="checkbox" id="modeBorstvoeding"><span class="slider"></span></label>
       </div>
     </div>
 
     <div style="border-bottom:1px solid var(--line); padding:14px 0;">
-      <span style="font-weight:600; font-size:0.9rem;">💾 Back-up van je gegevens</span>
+      <span style="font-weight:600; font-size:0.9rem;"><span class="emoji">💾</span> Back-up van je gegevens</span>
       <p class="muted" style="font-size:0.76rem; margin:6px 0 10px; line-height:1.5;">
         Sla al je cyclusgegevens op als bestand op je telefoon. Zo heb je altijd een eigen kopie,
         los van de cloud.</p>
@@ -344,7 +346,7 @@
 
     <div style="border-bottom:1px solid var(--line); padding:14px 0;">
       <div class="toggle-row" style="padding:0;">
-        <span>🔒 Pincodevergrendeling</span>
+        <span><span class="emoji">🔒</span> Pincodevergrendeling</span>
         <label class="switch"><input type="checkbox" id="pinToggle"><span class="slider"></span></label>
       </div>
       <p class="muted" style="font-size:0.76rem; margin:6px 0 0; line-height:1.5;">
@@ -520,7 +522,7 @@
   </div>
 
   <div class="card">
-    <h2>📅 Agenda-voorbeeld</h2>
+    <h2><span class="emoji">📅</span> Agenda-voorbeeld</h2>
     <div class="legend" style="display:flex; gap:14px; flex-wrap:wrap; font-size:0.74rem; color:var(--text-soft); margin:6px 0 12px; justify-content:center;">
       <span><span class="aleg bloed-dot"></span> bloeding</span>
       <span><span class="aleg fert-dot"></span> vruchtbaar</span>
@@ -531,7 +533,7 @@
   </div>
 
   <div class="card">
-    <h2>📊 Overzicht-voorbeeld</h2>
+    <h2><span class="emoji">📊</span> Overzicht-voorbeeld</h2>
     <p class="note" style="font-size:0.82rem; margin:0 0 12px;">Zo ziet het overzicht met gemiddelden eruit (hier op basis van de twee voorbeeldcycli):</p>
     <div id="voorbeeldStatsBox"></div>
   </div>
@@ -566,7 +568,7 @@
   </div>
 
   <div class="card">
-    <h2>🌡️ De ochtendtemperatuur</h2>
+    <h2><span class="emoji">🌡️</span> De ochtendtemperatuur</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     <b>Wanneer meten?</b> Elke ochtend direct na het wakker worden, vóór je opstaat of iets doet.
     Na minstens 3 uur aaneengesloten slaap. Altijd op hetzelfde moment en op dezelfde manier
@@ -586,7 +588,7 @@
   </div>
 
   <div class="card">
-    <h2>💧 Cervixslijm</h2>
+    <h2><span class="emoji">💧</span> Cervixslijm</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     Cervixslijm verandert tijdens de cyclus. Leer het dagelijks observeren — wat voel je bij de
     schaamlippen, en wat zie je eventueel? Noteer <i>avonds</i> de beste kwaliteit van die dag.</p>
@@ -620,7 +622,7 @@
   </div>
 
   <div class="card">
-    <h2>🔄 De dubbele controle</h2>
+    <h2><span class="emoji">🔄</span> De dubbele controle</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     De vruchtbare fase is pas echt voorbij als <b>zowel</b> de temperatuurstijging <b>als</b> de
     piekdag-telling zijn afgesloten — en dan geldt: wat het <b>laatste</b> komt, bepaalt het einde.
@@ -632,7 +634,7 @@
   </div>
 
   <div class="card">
-    <h2>📅 Begin van de cyclus</h2>
+    <h2><span class="emoji">📅</span> Begin van de cyclus</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     Aan het begin van de cyclus (na de menstruatie) kan er ook een korte onvruchtbare periode zijn,
     maar die wordt strenger beoordeeld — altijd in dubbele controle met het cervixslijm.</p>
@@ -648,7 +650,7 @@
   </div>
 
   <div class="card">
-    <h2>🌿 Baarmoederhals (optioneel)</h2>
+    <h2><span class="emoji">🌿</span> Baarmoederhals (optioneel)</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     De baarmoederhals kun je gebruiken als alternatieve dubbele controle naast het cervixslijm.
     Je voelt eenmaal per dag (zittend, altijd op dezelfde manier): stevigheid (hard/zacht),
@@ -660,7 +662,7 @@
   </div>
 
   <div class="card">
-    <h2>👶 Kinderwens</h2>
+    <h2><span class="emoji">👶</span> Kinderwens</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     De grootste kans op zwangerschap: de dagen met S+ slijm en de dag van de eerste hogere
     temperatuurmeting, plus dagen met ovulatiepijn of een zachte/open/hoge baarmoederhals.
@@ -669,7 +671,7 @@
   </div>
 
   <div class="card">
-    <h2>🤱 Borstvoeding</h2>
+    <h2><span class="emoji">🤱</span> Borstvoeding</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     <b>LAM (Lactatie Amenorroe Methode)</b> geldt zolang: je geeft volledige borstvoeding +
     kind is jonger dan 6 maanden + er is nog geen bloeding na de bevalling. Dan is vruchtbaarheid
@@ -678,7 +680,7 @@
   </div>
 
   <div class="card">
-    <h2>🌸 Overgangsjaren</h2>
+    <h2><span class="emoji">🌸</span> Overgangsjaren</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     Bij onregelmatige cycli of uitblijvende temperatuurstijgingen: alleen het cervixslijm gebruiken.
     Droog/niets = onvruchtbaar; zodra vocht of slijm optreedt = vruchtbaar, t/m de avond van de
@@ -686,7 +688,7 @@
   </div>
 
   <div class="card">
-    <h2>📊 Het overzicht (agenda)</h2>
+    <h2><span class="emoji">📊</span> Het overzicht (agenda)</h2>
     <p class="note" style="font-size:0.84rem; line-height:1.65;">
     Onderaan de Agenda-tab vind je een overzicht met je gemiddelden over de afgeronde cycli.
     Deze cijfers helpen je patronen te herkennen: hoe lang je cyclus meestal duurt (met de
@@ -696,7 +698,7 @@
   </div>
 
   <div class="card">
-    <h2>🧪 Voorbeeld bekijken</h2>
+    <h2><span class="emoji">🧪</span> Voorbeeld bekijken</h2>
     <p class="note" style="font-size:0.84rem;">Benieuwd hoe een volle kaart eruitziet? Laad twee
     complete voorbeeldcycli — helemaal los van je eigen gegevens.</p>
     <button class="secondary" id="showVoorbeeldBtn">Voorbeeld bekijken</button>
@@ -1138,7 +1140,7 @@ function renderVandaag(editIdx=null){
     <label>Datum</label>
     <input type="date" id="f_date" value="${suggestedDate}">
 
-    <div class="form-sec">🌡️ Temperatuur</div>
+    <div class="form-sec"><span class="emoji">🌡️</span> Temperatuur</div>
     <div class="row">
       <div><label>Temperatuur (°C)</label>
         <input type="number" step="0.01" min="35" max="39" id="f_temp"
@@ -1152,13 +1154,13 @@ function renderVandaag(editIdx=null){
       <span class="slider"></span></label>
     </div>
 
-    <div class="form-sec">🩸 Bloeding</div>
+    <div class="form-sec"><span class="emoji">🩸</span> Bloeding</div>
     <div class="chip-row" id="f_bloeding">
       <div class="chip" data-v="">geen</div><div class="chip" data-v="licht">licht/spotting</div>
       <div class="chip" data-v="normaal">normaal</div><div class="chip" data-v="sterk">sterk</div>
     </div>
 
-    <div class="form-sec">💧 Cervixslijm</div>
+    <div class="form-sec"><span class="emoji">💧</span> Cervixslijm</div>
     <label>Ervaren / voelen</label>
     <select id="f_ervaren">
       ${ERVAREN_OPTIES.map(o=>`<option value="${o.value}">${o.label}</option>`).join('')}
@@ -1171,7 +1173,7 @@ function renderVandaag(editIdx=null){
     <label>Extra omschrijving <span class="muted">(optioneel, vrije notitie)</span></label>
     <input type="text" id="f_uiterlijk" placeholder="bv. een beetje taal-elastisch, met witte draadjes" value="${day&&day.uiterlijk?day.uiterlijk:''}">
 
-    <div class="form-sec">🌿 Baarmoederhals <span class="muted" style="font-weight:400;">(optioneel)</span></div>
+    <div class="form-sec"><span class="emoji">🌿</span> Baarmoederhals <span class="muted" style="font-weight:400;">(optioneel)</span></div>
     <div class="chip-row" id="f_bmopen">
       <div class="chip" data-v="gesloten">gesloten •</div>
       <div class="chip" data-v="deels">deels open ○</div>
@@ -1181,7 +1183,7 @@ function renderVandaag(editIdx=null){
       <div class="chip" data-v="hard">hard</div><div class="chip" data-v="zacht">zacht</div>
     </div>
 
-    <div class="form-sec">✨ Overig</div>
+    <div class="form-sec"><span class="emoji">✨</span> Overig</div>
     <div class="chip-row" id="f_extra">
       <div class="chip" data-v="O">O ovulatiepijn</div><div class="chip" data-v="B">B borstsymptoom</div>
       <div class="chip" data-v="X">X gemeenschap</div>
