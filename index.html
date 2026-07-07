@@ -1557,15 +1557,21 @@ function renderCycleList(){
   list.innerHTML=DATA.cycles.slice().reverse().map(c=>{
     const r=computeTempRise(c);
     const status=r? `stijging dag ${r.riseIdx[0]+1}` : `${c.days.length} dagen`;
-    return `<div class="citem-wrap" style="border-bottom:1px solid var(--line); padding:12px 4px;">
-      <div class="citem" data-id="${c.id}" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; border:none; padding:0;">
-        <div><b>Cyclus ${c.nummer}</b><br><span class="muted">${fmtDate(c.startDate)} · ${status}</span></div>
-        <div class="muted">bekijk ›</div>
+    return `<div class="citem-wrap" style="border-bottom:1px solid var(--line); padding:13px 4px; position:relative;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div class="citem" data-id="${c.id}" style="cursor:pointer; flex:1;">
+          <b>Cyclus ${c.nummer}</b><br><span class="muted">${fmtDate(c.startDate)} · ${status}</span>
+        </div>
+        <button class="cyc-menu-btn" data-id="${c.id}" aria-label="Meer opties" style="background:none; border:none;
+          color:var(--text-soft); font-size:1.3rem; cursor:pointer; padding:4px 10px; line-height:1; border-radius:8px;">⋯</button>
       </div>
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <button class="secondary cyc-startdate" data-id="${c.id}" style="margin:0; flex:1; padding:7px; font-size:0.78rem;">📅 Startdatum</button>
-        <button class="secondary cyc-mail" data-id="${c.id}" style="margin:0; flex:1; padding:7px; font-size:0.78rem;">✉️ Mailen</button>
-        <button class="secondary cyc-del" data-id="${c.id}" style="margin:0; flex:1; padding:7px; font-size:0.78rem; color:#B04A4A;">🗑 Verwijderen</button>
+      <div class="cyc-menu" data-id="${c.id}" style="display:none; position:absolute; right:4px; top:44px; z-index:5;
+        background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden;
+        box-shadow:0 6px 20px rgba(91,58,75,0.18); min-width:150px;">
+        <button class="cyc-mail" data-id="${c.id}" style="display:block; width:100%; text-align:left; background:none;
+          border:none; padding:12px 16px; font-size:0.86rem; color:var(--text); cursor:pointer;">Mailen</button>
+        <button class="cyc-del" data-id="${c.id}" style="display:block; width:100%; text-align:left; background:none;
+          border:none; border-top:1px solid var(--line); padding:12px 16px; font-size:0.86rem; color:#B04A4A; cursor:pointer;">Verwijderen</button>
       </div>
     </div>`;
   }).join('')||'<p class="muted">Nog geen cycli.</p>';
@@ -1574,33 +1580,37 @@ function renderCycleList(){
   list.querySelectorAll('.citem').forEach(item=>item.addEventListener('click',()=>{
     currentCycleId=item.dataset.id; goTab('kaart');
   }));
-  // startdatum aanpassen
-  list.querySelectorAll('.cyc-startdate').forEach(b=>b.addEventListener('click', async ()=>{
-    const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
-    const nieuw=prompt(`Startdatum van cyclus ${c.nummer} (JJJJ-MM-DD):`, c.startDate);
-    if(!nieuw) return;
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(nieuw)){ alert('Gebruik het formaat JJJJ-MM-DD, bijv. 2026-07-01.'); return; }
-    c.startDate=nieuw;
-    await saveData(); renderCycleList();
+  // drie-puntjes-menu openen/sluiten
+  list.querySelectorAll('.cyc-menu-btn').forEach(btn=>btn.addEventListener('click',(e)=>{
+    e.stopPropagation();
+    const id=btn.dataset.id;
+    const menu=list.querySelector(`.cyc-menu[data-id="${id}"]`);
+    const wasOpen=menu.style.display==='block';
+    list.querySelectorAll('.cyc-menu').forEach(m=>m.style.display='none');
+    menu.style.display=wasOpen?'none':'block';
   }));
+  // klik buiten het menu sluit het
+  document.addEventListener('click',()=>{
+    list.querySelectorAll('.cyc-menu').forEach(m=>m.style.display='none');
+  });
   // mailen
-  list.querySelectorAll('.cyc-mail').forEach(b=>b.addEventListener('click', async ()=>{
+  list.querySelectorAll('.cyc-mail').forEach(b=>b.addEventListener('click', async (e)=>{
+    e.stopPropagation();
     const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
     b.textContent='Versturen…'; b.disabled=true;
     const ok=await sendCycleMail(c, false);
-    b.textContent= ok? '✓ Gemaild' : '✉️ Mailen'; b.disabled=false;
-    setTimeout(()=>{ b.innerHTML='✉️ Mailen'; }, 3000);
+    b.textContent= ok? '✓ Gemaild' : 'Mailen mislukt'; b.disabled=false;
+    setTimeout(()=>{ list.querySelectorAll('.cyc-menu').forEach(m=>m.style.display='none'); b.textContent='Mailen'; }, 2000);
   }));
   // verwijderen
-  list.querySelectorAll('.cyc-del').forEach(b=>b.addEventListener('click', async ()=>{
+  list.querySelectorAll('.cyc-del').forEach(b=>b.addEventListener('click', async (e)=>{
+    e.stopPropagation();
     const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
     if(DATA.cycles.length<=1){ alert('Je kunt de laatste cyclus niet verwijderen — er moet er altijd minstens één zijn.'); return; }
     if(!confirm(`Cyclus ${c.nummer} (start ${fmtDate(c.startDate)}) met ${c.days.length} dagen definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
     const idx=DATA.cycles.findIndex(x=>x.id===c.id);
     DATA.cycles.splice(idx,1);
-    // hernummer de cycli zodat ze weer 1,2,3… zijn
     DATA.cycles.forEach((cc,i)=>cc.nummer=i+1);
-    // als de huidige cyclus verwijderd is, val terug op de laatste
     if(currentCycleId===c.id) currentCycleId=DATA.cycles[DATA.cycles.length-1].id;
     await saveData(); renderCycleList();
   }));
