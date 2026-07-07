@@ -864,7 +864,11 @@ async function loadData(){
   }
   if(!DATA.cycles) DATA.cycles = [];
   if(DATA.cycles.length === 0) startNewCycle(todayISO());
-  currentCycleId = DATA.cycles[DATA.cycles.length-1].id;
+  // herstel de onthouden selectie (als die cyclus nog bestaat), anders de huidige lopende cyclus
+  let savedView=null;
+  try{ savedView=localStorage.getItem('cyclus_view_id'); }catch(e){}
+  if(savedView && DATA.cycles.some(c=>c.id===savedView)) currentCycleId=savedView;
+  else currentCycleId = DATA.cycles[DATA.cycles.length-1].id;
 }
 async function saveData(){
   // altijd meteen lokaal opslaan (offline-veilig)
@@ -884,10 +888,18 @@ function fmtDate(iso){ const d=new Date(iso+'T00:00:00');
 function fmtDateLong(iso){ const d=new Date(iso+'T00:00:00');
   return d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'}); }
 function getCycle(id){ return DATA.cycles.find(c=>c.id===id); }
-function currentCycle(){ return getCycle(currentCycleId); }
+// currentCycle() = de cyclus die je BEKIJKT (selectie in Cycli-tab, onthouden)
+function currentCycle(){ return getCycle(currentCycleId) || huidigeCyclus(); }
+// huidigeCyclus() = de ECHTE lopende cyclus (altijd de laatste) — hier gaat invullen naartoe
+function huidigeCyclus(){ return DATA.cycles[DATA.cycles.length-1]; }
+function setViewCycle(id){
+  currentCycleId=id;
+  try{ localStorage.setItem('cyclus_view_id', id); }catch(e){}
+}
 function startNewCycle(startDate){
   DATA.cycles.push({ id:'c'+Date.now(), nummer:DATA.cycles.length+1, startDate, days:[] });
   currentCycleId = DATA.cycles[DATA.cycles.length-1].id;
+  try{ localStorage.setItem('cyclus_view_id', currentCycleId); }catch(e){}
 }
 
 /* ============ Regels ============ */
@@ -994,7 +1006,7 @@ function computePrediction(){
   const avgLen = Math.round(lengths.reduce((a,b)=>a+b,0)/lengths.length);
   const riseDays = done.map(riseDayNumber).filter(x=>x!==null);
   const avgRise = riseDays.length? Math.round(riseDays.reduce((a,b)=>a+b,0)/riseDays.length) : null;
-  const startISO = currentCycle().startDate;
+  const startISO = huidigeCyclus().startDate;
   const nextMenstru = addDays(startISO, avgLen);
   let fertileStart=null, fertileEnd=null;
   if(avgRise){
@@ -1052,7 +1064,7 @@ document.getElementById('fabAdd').addEventListener('click',()=>{
 });
 document.getElementById('newCycleBtn').addEventListener('click', async (ev)=>{
   const btn=ev.currentTarget;
-  const afgerondeCyclus = currentCycle();
+  const afgerondeCyclus = huidigeCyclus();
   // mail de zojuist afgeronde cyclus automatisch (met PDF), als er genoeg data is
   if(afgerondeCyclus && afgerondeCyclus.days.length >= 10 && sb && currentUser){
     btn.disabled=true; btn.textContent='Cyclus mailen…';
@@ -1068,7 +1080,7 @@ document.getElementById('newCycleBtn').addEventListener('click', async (ev)=>{
 
 /* ---- Vandaag: status + invoer ---- */
 function renderVandaag(editIdx=null){
-  const cycle=currentCycle();
+  const cycle=huidigeCyclus();
   const forceNew = editIdx==='new' || editIdx==='bare';
   const bare = editIdx==='bare'; // kaal formulier zonder begroeting
   if(forceNew) editIdx=null;
@@ -1554,18 +1566,27 @@ function renderDayEditList(cycle){
 /* ---- Cycluslijst ---- */
 function renderCycleList(){
   const list=document.getElementById('cycleList');
+  const huidigeId = huidigeCyclus().id;
   list.innerHTML=DATA.cycles.slice().reverse().map(c=>{
     const r=computeTempRise(c);
     const status=r? `stijging dag ${r.riseIdx[0]+1}` : `${c.days.length} dagen`;
-    return `<div class="citem-wrap" style="border-bottom:1px solid var(--line); padding:13px 4px; position:relative;">
+    const isSelected = c.id===currentCycleId;
+    const isHuidig = c.id===huidigeId;
+    const selStyle = isSelected
+      ? 'background:linear-gradient(150deg, var(--cream), #F3E3EC); border:1.5px solid var(--rose);'
+      : 'border:1.5px solid transparent;';
+    const huidigLabel = isHuidig
+      ? `<span style="display:inline-block; margin-left:8px; font-size:0.66rem; font-weight:700; color:#fff;
+          background:var(--sage-dark); padding:2px 8px; border-radius:10px; vertical-align:middle;">Huidige</span>` : '';
+    return `<div class="citem-wrap" style="${selStyle} border-radius:14px; padding:13px 12px; margin-bottom:8px; position:relative; transition:background .15s;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <div class="citem" data-id="${c.id}" style="cursor:pointer; flex:1;">
-          <b>Cyclus ${c.nummer}</b><br><span class="muted">${fmtDate(c.startDate)} · ${status}</span>
+          <b>Cyclus ${c.nummer}</b>${huidigLabel}<br><span class="muted">${fmtDate(c.startDate)} · ${status}</span>
         </div>
         <button class="cyc-menu-btn" data-id="${c.id}" aria-label="Meer opties" style="background:none; border:none;
           color:var(--text-soft); font-size:1.3rem; cursor:pointer; padding:4px 10px; line-height:1; border-radius:8px;">⋯</button>
       </div>
-      <div class="cyc-menu" data-id="${c.id}" style="display:none; position:absolute; right:4px; top:44px; z-index:5;
+      <div class="cyc-menu" data-id="${c.id}" style="display:none; position:absolute; right:8px; top:46px; z-index:5;
         background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden;
         box-shadow:0 6px 20px rgba(91,58,75,0.18); min-width:150px;">
         <button class="cyc-mail" data-id="${c.id}" style="display:block; width:100%; text-align:left; background:none;
@@ -1576,9 +1597,9 @@ function renderCycleList(){
     </div>`;
   }).join('')||'<p class="muted">Nog geen cycli.</p>';
 
-  // bekijken → kaart
+  // bekijken → selecteer (onthouden) + open kaart
   list.querySelectorAll('.citem').forEach(item=>item.addEventListener('click',()=>{
-    currentCycleId=item.dataset.id; goTab('kaart');
+    setViewCycle(item.dataset.id); goTab('kaart');
   }));
   // drie-puntjes-menu openen/sluiten
   list.querySelectorAll('.cyc-menu-btn').forEach(btn=>btn.addEventListener('click',(e)=>{
@@ -1611,7 +1632,7 @@ function renderCycleList(){
     const idx=DATA.cycles.findIndex(x=>x.id===c.id);
     DATA.cycles.splice(idx,1);
     DATA.cycles.forEach((cc,i)=>cc.nummer=i+1);
-    if(currentCycleId===c.id) currentCycleId=DATA.cycles[DATA.cycles.length-1].id;
+    if(currentCycleId===c.id) setViewCycle(DATA.cycles[DATA.cycles.length-1].id);
     await saveData(); renderCycleList();
   }));
 }
@@ -1760,7 +1781,7 @@ document.getElementById('setReminderTime').addEventListener('change',(e)=>{
 document.getElementById('setMailSend').addEventListener('click', async ()=>{
   const btn=document.getElementById('setMailSend');
   btn.textContent='Versturen…'; btn.disabled=true;
-  const ok=await sendCycleMail(currentCycle(), false);
+  const ok=await sendCycleMail(huidigeCyclus(), false);
   btn.disabled=false;
   btn.textContent = ok ? '✓ Verstuurd!' : 'Verstuur PDF-kaart';
   setTimeout(()=>{ btn.textContent='Verstuur PDF-kaart'; }, 3000);
@@ -2060,7 +2081,7 @@ async function setSexForDate(iso, value){
     found.extra=[...extras].join(',');
   } else if(value){
     // dag bestaat nog niet → voeg een minimale dag toe aan de huidige cyclus
-    const c=currentCycle();
+    const c=huidigeCyclus();
     c.days.push({ date:iso, temp:null, meettijd:null, gestoord:false, bloeding:'',
       cervixAfk:null, uiterlijk:'', bmOpening:null, bmStevigheid:null, extra:'X', note:'' });
     c.days.sort((a,b)=>a.date<b.date?-1:1); // op datum sorteren
@@ -2570,7 +2591,7 @@ async function startApp(){
   await loadData();
 
   // 2. Ochtendscherm vóór de pincode (max gemak bij wazig wakker worden)
-  const cycle=currentCycle();
+  const cycle=huidigeCyclus();
   const vandaagDag = cycle && cycle.days.find(d => d.date === todayISO());
   const heeftTemp = vandaagDag && vandaagDag.temp;
 
@@ -2622,7 +2643,7 @@ async function saveOchtendTemp(){
   if(!temp){ closeOchtend(); return; }
   const now=new Date();
   const meettijd=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const cycle=currentCycle();
+  const cycle=huidigeCyclus();
   const today=todayISO();
   let dag=cycle.days.find(d=>d.date===today);
   if(dag){
@@ -2709,7 +2730,7 @@ function scheduleDailyReminder(){
 
   window._reminderTimeout = setTimeout(async ()=>{
     // Alleen melden als vandaag nog niet ingevuld
-    const cycle = currentCycle();
+    const cycle = huidigeCyclus();
     const vandaagAl = cycle && cycle.days.some(d => d.date === todayISO());
     if(!vandaagAl){
       await showAppNotification('🌷 Cycluss', 'Vergeet je temperatuur niet te meten!');
