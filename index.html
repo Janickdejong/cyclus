@@ -1050,13 +1050,20 @@ document.getElementById('fabAdd').addEventListener('click',()=>{
   document.getElementById('tab-vandaag').classList.add('active');
   renderVandaag('bare'); // kaal formulier, geen begroeting
 });
-document.getElementById('newCycleBtn').addEventListener('click', async ()=>{
+document.getElementById('newCycleBtn').addEventListener('click', async (ev)=>{
+  const btn=ev.currentTarget;
   const afgerondeCyclus = currentCycle();
-  // mail de zojuist afgeronde cyclus automatisch (stil, op de achtergrond)
-  if(afgerondeCyclus && afgerondeCyclus.days.length >= 10){
-    sendCycleMail(afgerondeCyclus, true);
+  // mail de zojuist afgeronde cyclus automatisch (met PDF), als er genoeg data is
+  if(afgerondeCyclus && afgerondeCyclus.days.length >= 10 && sb && currentUser){
+    btn.disabled=true; btn.textContent='Cyclus mailen…';
+    const ok = await sendCycleMail(afgerondeCyclus, true);
+    btn.textContent = ok ? '✓ Vorige cyclus gemaild' : '+ Nieuwe cyclus starten';
   }
-  startNewCycle(todayISO()); await saveData(); goTab('vandaag');
+  startNewCycle(todayISO());
+  await saveData();
+  btn.disabled=false;
+  btn.innerHTML='+ Nieuwe cyclus starten (dag 1 = eerste dag bloeding)';
+  goTab('vandaag');
 });
 
 /* ---- Vandaag: status + invoer ---- */
@@ -1550,12 +1557,52 @@ function renderCycleList(){
   list.innerHTML=DATA.cycles.slice().reverse().map(c=>{
     const r=computeTempRise(c);
     const status=r? `stijging dag ${r.riseIdx[0]+1}` : `${c.days.length} dagen`;
-    return `<div class="citem" data-id="${c.id}">
-      <div><b>Cyclus ${c.nummer}</b><br><span class="muted">${fmtDate(c.startDate)} · ${status}</span></div>
-      <div class="muted">›</div></div>`;
+    return `<div class="citem-wrap" style="border-bottom:1px solid var(--line); padding:12px 4px;">
+      <div class="citem" data-id="${c.id}" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; border:none; padding:0;">
+        <div><b>Cyclus ${c.nummer}</b><br><span class="muted">${fmtDate(c.startDate)} · ${status}</span></div>
+        <div class="muted">bekijk ›</div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button class="secondary cyc-startdate" data-id="${c.id}" style="margin:0; flex:1; padding:7px; font-size:0.78rem;">📅 Startdatum</button>
+        <button class="secondary cyc-mail" data-id="${c.id}" style="margin:0; flex:1; padding:7px; font-size:0.78rem;">✉️ Mailen</button>
+        <button class="secondary cyc-del" data-id="${c.id}" style="margin:0; flex:1; padding:7px; font-size:0.78rem; color:#B04A4A;">🗑 Verwijderen</button>
+      </div>
+    </div>`;
   }).join('')||'<p class="muted">Nog geen cycli.</p>';
+
+  // bekijken → kaart
   list.querySelectorAll('.citem').forEach(item=>item.addEventListener('click',()=>{
     currentCycleId=item.dataset.id; goTab('kaart');
+  }));
+  // startdatum aanpassen
+  list.querySelectorAll('.cyc-startdate').forEach(b=>b.addEventListener('click', async ()=>{
+    const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
+    const nieuw=prompt(`Startdatum van cyclus ${c.nummer} (JJJJ-MM-DD):`, c.startDate);
+    if(!nieuw) return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(nieuw)){ alert('Gebruik het formaat JJJJ-MM-DD, bijv. 2026-07-01.'); return; }
+    c.startDate=nieuw;
+    await saveData(); renderCycleList();
+  }));
+  // mailen
+  list.querySelectorAll('.cyc-mail').forEach(b=>b.addEventListener('click', async ()=>{
+    const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
+    b.textContent='Versturen…'; b.disabled=true;
+    const ok=await sendCycleMail(c, false);
+    b.textContent= ok? '✓ Gemaild' : '✉️ Mailen'; b.disabled=false;
+    setTimeout(()=>{ b.innerHTML='✉️ Mailen'; }, 3000);
+  }));
+  // verwijderen
+  list.querySelectorAll('.cyc-del').forEach(b=>b.addEventListener('click', async ()=>{
+    const c=DATA.cycles.find(x=>x.id===b.dataset.id); if(!c) return;
+    if(DATA.cycles.length<=1){ alert('Je kunt de laatste cyclus niet verwijderen — er moet er altijd minstens één zijn.'); return; }
+    if(!confirm(`Cyclus ${c.nummer} (start ${fmtDate(c.startDate)}) met ${c.days.length} dagen definitief verwijderen? Dit kan niet ongedaan worden gemaakt.`)) return;
+    const idx=DATA.cycles.findIndex(x=>x.id===c.id);
+    DATA.cycles.splice(idx,1);
+    // hernummer de cycli zodat ze weer 1,2,3… zijn
+    DATA.cycles.forEach((cc,i)=>cc.nummer=i+1);
+    // als de huidige cyclus verwijderd is, val terug op de laatste
+    if(currentCycleId===c.id) currentCycleId=DATA.cycles[DATA.cycles.length-1].id;
+    await saveData(); renderCycleList();
   }));
 }
 
@@ -2660,59 +2707,6 @@ function scheduleDailyReminder(){
     // Plan voor morgen opnieuw in
     scheduleDailyReminder();
   }, ms);
-}
-
-function renderReminderSettings(){
-  const el = document.getElementById('reminderSettingsBox');
-  if(!el) return;
-  const enabled = getReminderEnabled();
-  const time = getReminderTime();
-  const supported = 'Notification' in window;
-  const permission = supported ? Notification.permission : 'unsupported';
-
-  el.innerHTML = `
-    <div class="toggle-row">
-      <span><b>Dagelijkse herinnering</b>
-        <span class="muted" style="display:block; font-size:0.72rem;">
-        ${!supported ? 'Niet ondersteund op dit toestel' :
-          permission === 'denied' ? 'Geblokkeerd — zet notificaties aan in je telefooninstellingen' :
-          'Herinnert je aan het meten als je vandaag nog niet hebt ingevuld'}
-        </span>
-      </span>
-      <label class="switch">
-        <input type="checkbox" id="reminderToggle" ${enabled?'checked':''} ${!supported||permission==='denied'?'disabled':''}>
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div id="reminderTimeRow" style="${enabled&&supported?'':'display:none;'}">
-      <label>Tijdstip herinnering</label>
-      <input type="time" id="reminderTime" value="${time}" style="max-width:140px;">
-    </div>`;
-
-  document.getElementById('reminderToggle').addEventListener('change', async (e)=>{
-    if(e.target.checked){
-      const granted = await requestNotificationPermission();
-      if(!granted){
-        e.target.checked = false;
-        alert('Geef de app toestemming voor notificaties in je telefooninstellingen.');
-        return;
-      }
-      setReminderEnabled(true);
-      document.getElementById('reminderTimeRow').style.display='';
-      scheduleDailyReminder();
-    } else {
-      setReminderEnabled(false);
-      document.getElementById('reminderTimeRow').style.display='none';
-      if(window._reminderTimeout) clearTimeout(window._reminderTimeout);
-    }
-    renderReminderSettings();
-  });
-
-  const timeInput = document.getElementById('reminderTime');
-  if(timeInput) timeInput.addEventListener('change', (e)=>{
-    setReminderTime(e.target.value);
-    scheduleDailyReminder();
-  });
 }
 
 /* ---- Init ---- */
